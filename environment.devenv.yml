@@ -1,0 +1,23 @@
+name: blue_zero
+
+channels:
+  - defaults
+  - pytorch
+  - conda-forge
+
+dependencies:
+  - cudatoolkit =10.1
+  - cython
+  - ipython
+  - ipdb
+  - matplotlib
+  - numpy
+  - pip
+  - python >=3.8
+  - pytorch >=1.4
+  - tqdm
+  - pip:
+      - argparse
+      - gym
+      - path.py
+      - pygame
