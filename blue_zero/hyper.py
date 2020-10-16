@@ -12,14 +12,17 @@ class HyperParams:
                            # feats. + pools of board state) and final output
                            # for each node
     kernel_size: tuple = (3, 3)  # size of kernel for convolution
+    w_scale = 0.01  # initial network weights drawn from
+                    # uniform(-w_scale, w_scale)
 
-    # LEARNING
+    # TRAINING
     gamma: float = 1.0  # discount factor
     lr: float = 1e-4    # learning rate
     batch_size: int = 64  # num. of states to use per training iteration
     max_epochs: int = 10 ** 5  # number of trains to do before terminating
     play_freq: int = 100   # Rate at which to play envs
     num_play: int = 100   # Number of environments to play at every "play" step
+    train_set_size = 100_000  # Number of random grids to use for training
 
     # ANNEALING
     eps_start: float = 1.0  # start prob. to pick random move (greedy epsilon)
@@ -30,7 +33,6 @@ class HyperParams:
     soft_update_rate: float = 0.0001  # 'soft' update rate for target net
     target_update_mode: str = 'hard'  # one ['hard', 'soft']; method used to
                                       # updat target net from policy net
-
 
     # FITTING/LOSS FUNCTION
     max_grad_norm: float = 1.0  # clip the magnitudes of gradients to this value
@@ -44,4 +46,5 @@ class HyperParams:
 
     # VALIDATION
     validation_freq: int = 100  # perform validation every this many epochs
+    validation_set_size = 100  # Number of random grids to use for validation
 

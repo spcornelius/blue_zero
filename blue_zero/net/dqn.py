@@ -6,12 +6,12 @@ from torch.nn import Conv2d, Linear, Module, LeakyReLU, Sequential, \
 from blue_zero.config import Status
 import blue_zero.util as util
 
-__all__ = ['QNet']
+__all__ = ['DQN']
 
 
-class QNet(Module):
+class DQN(Module):
 
-    def __init__(self, num_feat: int, num_hidden: int, depth: int,
+    def __init__(self, *, num_feat: int, num_hidden: int, depth: int,
                  kernel_size: Union[int, Tuple[int, int]] = (3, 3),
                  conv_bias: bool = False):
         super().__init__()
