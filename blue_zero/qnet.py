@@ -12,7 +12,8 @@ __all__ = ['QNet']
 class QNet(Module):
 
     def __init__(self, num_feat: int, num_hidden: int, depth: int,
-                 kernel_size: Union[int, Tuple[int, int]] = (3, 3)):
+                 kernel_size: Union[int, Tuple[int, int]] = (3, 3),
+                 conv_bias: bool = False):
         super().__init__()
         self.num_feat = num_feat
         self.num_hidden = num_hidden
@@ -28,7 +29,7 @@ class QNet(Module):
         layers = [Conv2d(4, num_feat,
                          kernel_size=kernel_size,
                          padding=padding,
-                         bias=False),
+                         bias=conv_bias),
                   LeakyReLU()]
 
         # subsequent convolutions (always with num_feat channels)
@@ -36,7 +37,7 @@ class QNet(Module):
             layers.append(Conv2d(num_feat, num_feat,
                                  kernel_size=kernel_size,
                                  padding=padding,
-                                 bias=False))
+                                 bias=conv_bias))
             layers.append(LeakyReLU())
 
         self.value = Sequential(Linear(3*num_feat, num_hidden),
