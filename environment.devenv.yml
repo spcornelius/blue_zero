@@ -1,23 +1,22 @@
 name: blue_zero
 
 channels:
-  - defaults
   - pytorch
-  - conda-forge
+  - defaults
+#  - conda-forge
 
 dependencies:
-  - cudatoolkit =10.1
   - cython
   - ipython
-  - ipdb
   - matplotlib
   - numpy
   - pip
   - python >=3.8
-  - pytorch >=1.4
+  - pytorch >=1.6
   - tqdm
   - pip:
       - argparse
       - gym
+      - ipdb
       - path.py
       - pygame
