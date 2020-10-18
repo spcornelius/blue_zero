@@ -20,9 +20,10 @@ if args.count("build_ext") > 0 and args.count("--inplace") == 0:
     sys.argv.insert(sys.argv.index("build_ext") + 1, "--inplace")
 
 clusters_ext = Extension("blue_zero.clusters.clusters",
-                   ["blue_zero/clusters/clusters.pyx"],
-                   include_dirs=[np.get_include()]
-                   )
+                         ["blue_zero/clusters/clusters.pyx"],
+                         include_dirs=[np.get_include()],
+                         extra_compile_args=['-O3']
+                         )
 
 if __name__ == '__main__':
     setup(
