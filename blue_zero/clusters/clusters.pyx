@@ -3,12 +3,13 @@
 import numpy as np
 cimport numpy as np
 ctypedef np.uint8_t uint8
-
+from libc.stdlib cimport calloc, free
 
 __all__ = ['find_clusters']
 
+cdef inline int int_max(int a, int b): return a if a >= b else b
 
-cdef int find(int x, int[::1] alias):
+cdef int find(int x, int *alias):
     cdef int z, y = x
     while alias[y] != y:
         y = alias[y]
@@ -20,7 +21,7 @@ cdef int find(int x, int[::1] alias):
     return y
 
 
-cdef int unite(int x, int y, int[::1] alias):
+cdef int unite(int x, int y, int *alias):
     cdef int a = find(y, alias)
     alias[find(x, alias)] = a
     return a
@@ -32,7 +33,12 @@ def find_clusters(uint8[:, ::1] grid):
     cdef Py_ssize_t h = grid.shape[0]
     cdef Py_ssize_t w = grid.shape[1]
 
-    cdef int [::1] alias = np.arange(h * w + 1, dtype=np.intc)
+    # cdef int [::1] alias = np.arange(h * w + 1, dtype=np.intc)
+    cdef int* alias = <int *> calloc(sizeof(int), h * w + 1)
+    alias[0] = 0
+
+    # for x in range(h * w + 1):
+    #    alias[x] = x
 
     label_arr = np.zeros((h, w), dtype=np.intc)
     cdef int[:, ::1] label = label_arr
@@ -46,19 +52,20 @@ def find_clusters(uint8[:, ::1] grid):
                 left = label[i - 1, j] if i > 0 else 0
                 up = label[i, j - 1] if j > 0 else 0
 
-                if left == 0 and up == 0:
-                    alias[0] += 1
-                    label[i, j] = alias[0]
-                elif left > 0 and up == 0:
-                    label[i, j] = find(left, alias)
-                elif left == 0 and up > 0:
-                    label[i, j] = find(up, alias)
+                x = (left != 0) + (up != 0)
+                if x == 2:
+                    label[i, j] = unite(left, up, alias)
+                elif x == 1:
+                    label[i, j] = max(up, left)
                 else:
-                    unite(left, up, alias)
-                    label[i, j] = find(left, alias)
+                    alias[0] += 1
+                    alias[alias[0]] = alias[0]
+                    label[i, j] = alias[0]
+
 
     # relabel each cluster using only the smallest equivalent label alias
-    cdef int[::1] new_label = np.zeros(h * w + 1, dtype=np.intc)
+    cdef int* new_label = <int *> calloc(sizeof(int), h * w + 1)
+    new_label[0] = 0
 
     for i in range(h):
         for j in range(w):
@@ -68,5 +75,8 @@ def find_clusters(uint8[:, ::1] grid):
                     new_label[0] += 1
                     new_label[x] = new_label[0]
                 label[i, j] = new_label[x]
+
+    free(alias)
+    free(new_label)
 
     return label_arr
