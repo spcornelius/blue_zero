@@ -8,9 +8,9 @@ class HyperParams:
     # EMBEDDING/Q NET
     depth: int = 5  # total number of convolutional layers
     num_feat: int = 32  # no. of node features (= no. of conv. filters)
-    num_hidden: int = 128   # size of hidden layer between inputs (embedded node
-                           # feats. + pools of board state) and final output
-                           # for each node
+    num_hidden: int = 128   # size of hidden layer between inputs (embedded
+                            # node feats. + pools of board state) and final
+                            # output (q value) for each node
     kernel_size: tuple = (3, 3)  # size of kernel for convolution
     w_scale = 0.01  # initial network weights drawn from
                     # uniform(-w_scale, w_scale)
@@ -32,16 +32,16 @@ class HyperParams:
                                       # many epochs
     soft_update_rate: float = 0.0001  # 'soft' update rate for target net
     target_update_mode: str = 'hard'  # one ['hard', 'soft']; method used to
-                                      # updat target net from policy net
+                                      # update target net from policy net
 
     # FITTING/LOSS FUNCTION
-    max_grad_norm: float = 1.0  # clip the magnitudes of gradients to this value
-                                # before backward pass
+    max_grad_norm: float = 1.0  # clip the magnitudes of gradients to this
+                                # value before backward pass
 
     # MEMORY
     mem_size: int = 10 ** 6  # max no. of transitions to store in replay
-    num_burn_in: int = 100   # no. of environments to play and store before
-                              # starting training
+    num_burn_in: int = 100   # no. of environments to play and store in replay
+                             # memory before start of training
     step_diff: int = 1  # no. of steps to use between initial/target states
 
     # VALIDATION
