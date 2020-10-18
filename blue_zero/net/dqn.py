@@ -11,7 +11,7 @@ __all__ = ['DQN']
 
 class DQN(Module):
 
-    def __init__(self, *, num_feat: int, num_hidden: int, depth: int,
+    def __init__(self, num_feat: int, num_hidden: int, depth: int,
                  kernel_size: Union[int, Tuple[int, int]] = (3, 3),
                  conv_bias: bool = False):
         super().__init__()
