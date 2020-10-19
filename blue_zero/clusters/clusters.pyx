@@ -40,8 +40,8 @@ def find_clusters(uint8[:, ::1] grid):
     # for x in range(h * w + 1):
     #    alias[x] = x
 
-    label_arr = np.zeros((h, w), dtype=np.intc)
-    cdef int[:, ::1] label = label_arr
+    labels_arr = np.zeros((h, w), dtype=np.intc)
+    cdef int[:, ::1] labels = labels_arr
 
     cdef Py_ssize_t i, j
     cdef int left, up, x
@@ -49,34 +49,43 @@ def find_clusters(uint8[:, ::1] grid):
     for i in range(h):
         for j in range(w):
             if grid[i, j]:
-                left = label[i - 1, j] if i > 0 else 0
-                up = label[i, j - 1] if j > 0 else 0
+                left = labels[i - 1, j] if i > 0 else 0
+                up = labels[i, j - 1] if j > 0 else 0
 
                 x = (left != 0) + (up != 0)
                 if x == 2:
-                    label[i, j] = unite(left, up, alias)
+                    labels[i, j] = unite(left, up, alias)
                 elif x == 1:
-                    label[i, j] = max(up, left)
+                    labels[i, j] = max(up, left)
                 else:
                     alias[0] += 1
                     alias[alias[0]] = alias[0]
-                    label[i, j] = alias[0]
+                    labels[i, j] = alias[0]
 
 
     # relabel each cluster using only the smallest equivalent label alias
-    cdef int* new_label = <int *> calloc(sizeof(int), h * w + 1)
-    new_label[0] = 0
+    cdef int* new_labels = <int *> calloc(sizeof(int), h * w + 1)
+    new_labels[0] = 0
 
     for i in range(h):
         for j in range(w):
-            if label[i, j]:
-                x = find(label[i, j], alias)
-                if new_label[x] == 0:
-                    new_label[0] += 1
-                    new_label[x] = new_label[0]
-                label[i, j] = new_label[x]
+            if labels[i, j]:
+                x = find(labels[i, j], alias)
+                if new_labels[x] == 0:
+                    new_labels[0] += 1
+                    new_labels[x] = new_labels[0]
+                labels[i, j] = new_labels[x]
+
+    # calculate sizes of all clusters
+    cluster_sizes_arr = np.zeros(new_labels[0]+1, dtype=np.intc)
+    cdef int[::1] cluster_sizes = cluster_sizes_arr
+
+    for i in range(h):
+        for j in range(w):
+            if labels[i, j]:
+                cluster_sizes[labels[i, j]] += 1
 
     free(alias)
-    free(new_label)
+    free(new_labels)
 
-    return label_arr
+    return labels_arr, cluster_sizes_arr
