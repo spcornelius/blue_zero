@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from copy import deepcopy
+from time import sleep
 from typing import Iterable
 
 import numpy as np
@@ -7,9 +9,7 @@ import torch
 from torch.nn.functional import softmax
 from tqdm import tqdm
 
-from blue_zero.config import Status
 from blue_zero.env.blue import Blue
-from time import sleep
 
 __all__ = []
 __all__.extend([
@@ -34,13 +34,13 @@ def get_action_greedy_eps(q, eps):
     # remember: ineligible squares have q = -infinity
     finite = ~torch.isinf(q)
 
-    # sneaky way of getting random actions from teh same function used
-    # to get "best" actions, depending on x
+    # replace scores of eligible actions on designated boards with randoms
+    # = sneaky way of getting random actions without writing a separate
+    # function from the pure-greedy case
     q[finite & random] = torch.rand_like(q[finite & random])
 
     q_new, ij_flat = torch.max(q.view(batch_size, -1), 1)
     ij = flat_to_2d(ij_flat, w)
-    assert (~torch.isinf(q_new)).all().item()
     return ij, q_new
 
 
@@ -55,7 +55,6 @@ def get_action_softmax(q, temp):
     ij = flat_to_2d(ij_flat, w)
     i, j = ij.t()
     q_new = q[torch.arange(batch_size), i, j]
-    assert (~torch.isinf(q_new)).all().item()
     return ij, q_new
 
 
@@ -69,30 +68,23 @@ class Agent(object):
                    eps: float = 0.0,
                    return_q: bool = False):
         input_was_batched = s.ndim == 3
+
         with torch.no_grad():
             q = self.net(s)
 
-        # replace ineligible squares with -infinity
-        # (tricky way of ensuring they are never chosen by a
-        # maximization_based strategy)
-        invalid = (s == Status.wall) | (s == Status.attacked)
-        q[invalid.view_as(q)] = -float('inf')
-
         a, q = get_action_greedy_eps(q, eps)
-
-        for b, ij in enumerate(a):
-            i, j = tuple(ij)
 
         if not input_was_batched:
             a = a[0]
-            q = q.squeeze().item()
+            q = q.squeeze()
 
         return (a, q) if return_q else a
 
     def play_envs(self, envs: Iterable[Blue],
                   eps: float = 0.0,
                   with_pbar: bool = False,
-                  pause=0.0) -> None:
+                  pause=0.,
+                  device='cpu') -> None:
 
         envs = list(envs)
         if with_pbar:
@@ -100,11 +92,9 @@ class Agent(object):
 
         while unfinished_envs := [e for e in envs if not e.done]:
             # batch the states together
-            batch = torch.stack([e.state for e in unfinished_envs])
-            actions, q_vals = self.get_action(batch,
-                                              eps=eps,
-                                              return_q=True)
-
+            batch = np.stack([e.state for e in unfinished_envs])
+            batch = torch.from_numpy(batch).to(device=device)
+            actions = self.get_action(batch, eps=eps).cpu().numpy()
             for i, (e, a) in enumerate(zip(unfinished_envs, actions)):
                 _, _, done, _ = e.step(a)
 

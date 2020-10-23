@@ -1,7 +1,7 @@
 from typing import List, Union, Tuple
 
 import torch
-from torch.nn import Conv2d, Linear, Module, LeakyReLU, Sequential, \
+from torch.nn import Conv2d, Module, ReLU, Sequential, \
     AdaptiveMaxPool2d, AdaptiveAvgPool2d
 from blue_zero.config import Status
 import blue_zero.util as util
@@ -30,7 +30,7 @@ class DQN(Module):
                          kernel_size=kernel_size,
                          padding=padding,
                          bias=conv_bias),
-                  LeakyReLU()]
+                  ReLU()]
 
         # subsequent convolutions (always with num_feat channels)
         for _ in range(depth - 1):
@@ -38,18 +38,22 @@ class DQN(Module):
                                  kernel_size=kernel_size,
                                  padding=padding,
                                  bias=conv_bias))
-            layers.append(LeakyReLU())
-
-        self.value = Sequential(Linear(3*num_feat, num_hidden),
-                                LeakyReLU(),
-                                Linear(num_hidden, 1)
-                                )
-
-        self.advantage = Sequential(Linear(4 * num_feat, num_hidden),
-                                    LeakyReLU(),
-                                    Linear(num_hidden, 1))
+            layers.append(ReLU())
 
         self.embed = Sequential(*layers)
+
+        self.value = Sequential(Conv2d(3 * num_feat, num_hidden,
+                                       kernel_size=(1, 1), bias=True),
+                                ReLU(),
+                                Conv2d(num_hidden, 1,
+                                       kernel_size=(1, 1), bias=True)
+                                )
+
+        self.advantage = Sequential(Conv2d(4 * num_feat, num_hidden,
+                                           kernel_size=(1, 1), bias=True),
+                                    ReLU(),
+                                    Conv2d(num_hidden, 1,
+                                           kernel_size=(1, 1), bias=True))
 
         # pool layers for calculate representations of board as a whole
         self.max_pool = AdaptiveMaxPool2d(output_size=(1, 1))
@@ -78,32 +82,37 @@ class DQN(Module):
         avg = self.avg_pool(a_rep)
         max_ = self.max_pool(a_rep)
         sum_ = h * w * avg
+
+        # representation of board state as a whole
+        # shape is (batch_size, 3 * num_feat, 1)
         s_rep = torch.cat((avg, max_, sum_), dim=1)
 
-        # input_ will have shape (batch_size, 4 * num_feat, h, w)
+        # board representation + action representations combined
+        # board state is simply repeated for every square in that board
+        # s_a_rep will thus have shape (batch_size, 4 * num_feat, h, w)
         s_a_rep = torch.cat((s_rep.expand(-1, -1, h, w), a_rep), dim=1)
 
-        # fully-connected Linear layers expect input dim (channels) to be
-        # last, so permute dimensions to shape (batch_size, h, w, num_feat)
-        s_a_rep = s_a_rep.permute(0, 2, 3, 1)
-        s_rep = s_rep.permute(0, 2, 3, 1)
-
+        # calculate advantage for each action (h x w) and value for each
+        # board state as a whole. Represent both as shape
+        # (batch_size x h x w)
         adv = self.advantage(s_a_rep).view(batch_size, h, w)
         val = self.value(s_rep).expand(-1, 1, h, w).squeeze()
 
-        invalid_mask = (s[:, Status.wall, :, :].byte() |
-                        s[:, Status.attacked, :, :].byte()).bool()
-
-        adv[invalid_mask] = 0
-
-        num_actions = (adv != 0).sum(dim=(1, 2), keepdim=True).expand(-1, h, w)
+        # only want to calculate the average advantage over *valid* actions
+        # zero out that of ineligible moves
+        invalid = (s[:, Status.wall, :, :].byte() |
+                   s[:, Status.attacked, :, :].byte()).bool()
+        adv.masked_fill_(invalid, 0.0)
+        adv_mean = adv.sum(dim=(1, 2), keepdim=True) / \
+                   (~invalid).sum(dim=(1, 2), keepdim=True)
 
         # finally, get q values for each square
         # q will have shape (batch_size, h, w)
         # q = self.w_final(hidden).view(batch_size, h, w)
-        adv_mean = adv.sum(dim=(1, 2),
-                           keepdim=True).expand(-1, h, w)/num_actions
-        q = val + adv - adv_mean
+        q = val + adv - adv_mean.expand_as(adv)
+
+        # give ineligible moves a score of -infinity
+        q.masked_fill_(invalid, float("-inf"))
         if a is None:
             # user wants all actions for all boards in batch
             return q

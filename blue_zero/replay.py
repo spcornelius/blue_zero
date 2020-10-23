@@ -41,15 +41,17 @@ class NStepReplayMemory(object):
         assert e.done
         for i in range(0, e.steps_taken):
             i_next = i + self.step_size
-            a = e.actions[i]
+            a = torch.from_numpy(e.actions[i]).to(device=self.device)
             r_prev = e.rewards[i]
-            s_prev = e.states[i]
+            s_prev = torch.from_numpy(e.states[i]).to(
+                device=self.device).float()
             if i_next >= e.steps_taken:
                 # final state
-                s, r, terminal = e.state.clone(), e.r, True
+                s, r, terminal = e.state.copy(), e.r, True
             else:
                 # non-final state
                 s, r, terminal = e.states[i_next], e.rewards[i_next], False
+            s = torch.from_numpy(s).to(device=self.device).float()
             self._memory.append(Transition(s_prev, a, s, r - r_prev, terminal))
 
     def sample(self, batch_size: int) -> Tuple:
@@ -69,11 +71,11 @@ class NStepReplayMemory(object):
         s_prev, a, s, dr, terminal = list(
             zip(*random.sample(self._memory, batch_size)))
 
-        a = torch.stack(a, 0).to(device=device)
-        dr = torch.tensor(dr).to(device=device)
-        terminal = torch.tensor(terminal).to(device=device, dtype=torch.bool)
-        s_prev = torch.stack(s_prev, 0).to(device=device)
-        s = torch.stack(s, 0).to(device=device)
+        a = torch.stack(a)
+        dr = torch.tensor(dr, device=device, dtype=torch.float32)
+        terminal = torch.tensor(terminal, device=device, dtype=torch.bool)
+        s_prev = torch.stack(s_prev)
+        s = torch.stack(s)
 
         return s_prev, a, s, dr, terminal
 

@@ -111,7 +111,7 @@ class Trainer(object):
         _, q = self.target_agent.get_action(s, return_q=True)
 
         # terminal states by definition have zero reward-to-go
-        q[terminal] = 0.0
+        q.masked_fill_(terminal, 0.0)
 
         # shouldn't be necessary as the optimizer only knows about the policy
         # net's parameters, but make sure the target q values don't contribute
@@ -124,9 +124,10 @@ class Trainer(object):
         self.optimizer.zero_grad()
         loss = self.loss_func(q_prev, dr + self.hp.gamma * q)
         loss.backward()
+
         clip_grad_norm_(self.agent.parameters(), self.hp.max_grad_norm)
         self.optimizer.step()
-        return loss.detach().item()
+        return loss.detach()
 
     def play_games(self, n: int, with_pbar: bool = False):
         """ Play through n complete environments drawn from the training
@@ -137,9 +138,8 @@ class Trainer(object):
         for e in envs:
             e.reset()
 
-        self.agent.play_envs(envs,
-                             eps=self.eps,
-                             with_pbar=with_pbar)
+        self.agent.play_envs(envs, eps=self.eps, with_pbar=with_pbar,
+                             device=self.device)
 
         for e in envs:
             assert e.done
@@ -161,6 +161,5 @@ class Trainer(object):
 
         # use a full greedy strategy (eps=0) for validation
         self.agent.play_envs(self.validation_set,
-                             eps=0,
-                             with_pbar=with_pbar)
+                             eps=0, with_pbar=with_pbar, device=self.device)
         return np.mean([e.sol_size for e in self.validation_set])

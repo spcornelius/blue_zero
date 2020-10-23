@@ -1,14 +1,12 @@
 from typing import Tuple
 
-import torch
 import numpy as np
 from gym import Env
-from torch import Tensor
 
-from blue_zero.config import Status
-from blue_zero.clusters import find_clusters
-from blue_zero.gui import BlueGUI
 import blue_zero.config as cfg
+from blue_zero.clusters import find_clusters
+from blue_zero.config import Status
+from blue_zero.gui import BlueGUI
 
 __all__ = []
 __all__.extend([
@@ -23,11 +21,11 @@ class Blue(Env):
                  screen_size: Tuple[int, int] = cfg.screen_size):
         super().__init__()
 
-        state = torch.as_tensor(state, dtype=torch.uint8)
+        state = np.asarray(state, dtype=np.float32)
         assert state.ndim == 2
-        assert np.isin(state.cpu().numpy(), Status).all()
+        assert np.isin(state, Status).all()
         self.state = state
-        self._r_norm = np.prod(self.state.shape)
+        self._r_norm = np.sqrt(np.prod(self.state.shape))
 
         self.with_gui = with_gui
 
@@ -39,7 +37,7 @@ class Blue(Env):
         self.r = 0.0
 
         # keep copy of initial state for resetting
-        self._state_orig = self.state.detach().clone()
+        self._state_orig = self.state.copy()
         self._game_over = False
 
         if self.with_gui:
@@ -47,18 +45,6 @@ class Blue(Env):
                                screen_size=screen_size)
 
         self.update()
-
-    def _get_clusters(self):
-        # get clusters, their sizes, and mapping of grid cell to cluster
-        s = self.state.cpu().numpy()
-        not_blocked = (s == Status.alive) | (s == Status.dead)
-        cluster_map = find_clusters(not_blocked)
-        clusters, sizes = np.unique(cluster_map[cluster_map != 0],
-                                    return_counts=True)
-        # remap clusters to start at 0
-        clusters -= 1
-        cluster_map -= 1
-        return clusters, sizes, cluster_map
 
     @classmethod
     def from_random(cls, size: tuple, p: float, **kwargs):
@@ -78,37 +64,36 @@ class Blue(Env):
         return -1.0 / self._r_norm
 
     @property
-    def action_space(self) -> Tensor:
+    def action_space(self) -> np.ndarray:
         s = self.state
-        return ((s == Status.alive) | (s == Status.dead)).nonzero()
+        return np.argwhere(np.logical_or(s == Status.alive,
+                                         s == Status.dead))
 
     def update(self) -> None:
-        clusters, sizes, cluster_map, = self._get_clusters()
-
-        if len(clusters) > 1:
+        s = self.state
+        not_blocked = np.logical_or(s == Status.alive, s == Status.dead)
+        labels, cluster_sizes = find_clusters(not_blocked)
+        # note: cluster 0 is an artificial cluster corresponding to the wall
+        # squares. cluster_sizes[0] will always be 0.
+        if len(cluster_sizes) > 2:
             self.max_non_lcc_size = max(self.max_non_lcc_size,
-                                        np.sort(sizes)[::-1][1])
+                                        np.sort(cluster_sizes)[-2])
 
-        small = torch.from_numpy(
-            sizes[clusters[cluster_map]]) <= self.max_non_lcc_size
-        small = small.to(device=self.state.device)
-
-        self.state[(self.state == Status.alive) & small] = Status.dead
-        self._game_over = not (self.state == Status.alive).any().item()
+        idx = (s == Status.alive) & \
+              (cluster_sizes[labels] <= self.max_non_lcc_size)
+        self.state[idx] = Status.dead
+        self._game_over = np.all(cluster_sizes <= self.max_non_lcc_size)
         self.render()
 
     def render(self):
         if self.with_gui:
             self.gui.draw_board(self.state)
 
-    def step(self, ij) -> Tuple[Tensor, float, bool, None]:
-        i, j = tuple(ij)
-        if ((self.state[i, j] == Status.wall) |
-            (self.state[i, j] == Status.attacked)).item():
-            raise ValueError(f"Position ({i}, {j}) is an invalid move.")
+    def step(self, ij) -> Tuple[np.ndarray, float, bool, None]:
+        i, j = ij
 
         # record current status in history
-        self.states.append(self.state.detach().clone())
+        self.states.append(self.state.copy())
         self.actions.append(ij)
         self.rewards.append(self.r)
 
@@ -129,17 +114,6 @@ class Blue(Env):
         self.r = 0.0
         self.steps_taken = 0
         self.max_non_lcc_size = 0
-        self.state = self._state_orig.detach().clone()
+        self.state = self._state_orig.copy()
         self.update()
 
-    def to(self, *args, **kwargs):
-        self.state = self.state.to(*args, **kwargs)
-        for s_prev in self.states:
-            s_prev.to(*args, **kwargs)
-        for a in self.actions:
-            try:
-                a.to(*args, **kwargs)
-            except AttributeError:
-                continue
-        self._state_orig = self._state_orig.to(*args, **kwargs)
-        return self

@@ -1,5 +1,14 @@
 import numpy as np
 import torch
+import random
+
+random.seed(0)
+torch.manual_seed(0)
+torch.cuda.manual_seed_all(0)
+np.random.seed(0)
+torch.backends.cudnn.benchmark = True
+torch.backends.cudnn.deterministic = True
+
 from path import Path
 
 import blue_zero.util as util
@@ -9,8 +18,8 @@ from blue_zero.net.dqn import DQN
 from blue_zero.trainer import Trainer
 
 device = 'cuda:1'
-p = 0.65
-n = 10
+p = 0.62
+n = 20
 
 untrained_model_save_file = Path(f"./saved_models/untrained_model_{n}.pt")
 trained_model_save_file = Path(f"./saved_models/trained_model_{n}.pt")
@@ -21,6 +30,7 @@ net = DQN(hp.num_feat, hp.num_hidden, hp.depth,
           kernel_size=hp.kernel_size)
 target_net = DQN(hp.num_feat, hp.num_hidden, hp.depth,
                  kernel_size=hp.kernel_size)
+
 util.init_weights(net, hp.w_scale)
 util.init_weights(target_net, hp.w_scale)
 
@@ -36,7 +46,7 @@ def gen_playable_envs(num):
     # finished
     envs = []
     while len(envs) < num:
-        while (env := util.gen_random_env(n, p, device=device)).done:
+        while (env := util.gen_random_env(n, p)).done:
             pass
         envs.append(env)
     return envs
@@ -52,5 +62,6 @@ np.save(validation_data_save_file,
 trainer = Trainer(agent, target_agent,
                   train_set, validation_set,
                   hp, device=device)
+
 trainer.train()
 torch.save(trainer.best_params, trained_model_save_file)
