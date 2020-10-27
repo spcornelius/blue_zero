@@ -1,5 +1,6 @@
 from typing import Tuple
 
+import numpy as np
 import pygame
 from torch import Tensor
 
@@ -39,7 +40,7 @@ class BlueGUI(object):
 
         self.rects = dict()
         for status in cfg.Status:
-            for ij in (state == status).nonzero().numpy():
+            for ij in np.argwhere(state == status):
                 i, j = tuple(ij)
                 left = self.cell_w * j + self.pad_w * (j + 1)
                 top = self.cell_h * i + self.pad_h * (i + 1)

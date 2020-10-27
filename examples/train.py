@@ -57,7 +57,7 @@ validation_set = gen_playable_envs(hp.validation_set_size)
 
 # save validation data
 np.save(validation_data_save_file,
-        np.stack([e.state.cpu().numpy() for e in validation_set], axis=0))
+        np.stack([e.state for e in validation_set], axis=0))
 
 trainer = Trainer(agent, target_agent,
                   train_set, validation_set,
