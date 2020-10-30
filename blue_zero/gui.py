@@ -1,7 +1,9 @@
 from typing import Tuple
 
 import numpy as np
-import pygame
+import contextlib
+with contextlib.redirect_stdout(None):
+    import pygame
 from torch import Tensor
 
 import blue_zero.config as cfg
