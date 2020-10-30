@@ -41,15 +41,7 @@ agent = Agent(net)
 target_agent = Agent(net)
 
 
-def gen_playable_envs(num):
-    # generate a specified no. of random environments that aren't already
-    # finished
-    envs = []
-    while len(envs) < num:
-        while (env := util.gen_random_env(n, p)).done:
-            pass
-        envs.append(env)
-    return envs
+
 
 
 train_set = gen_playable_envs(hp.train_set_size)
