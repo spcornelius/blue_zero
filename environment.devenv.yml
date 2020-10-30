@@ -6,6 +6,7 @@ channels:
 #  - conda-forge
 
 dependencies:
+  - contextlib2
   - cython
   - ipython
   - matplotlib
@@ -19,4 +20,4 @@ dependencies:
       - gym
       - ipdb
       - path.py
-      - pygame
+      - pygame >=2.0.0
