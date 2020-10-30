@@ -13,6 +13,7 @@ class DQN(Module):
 
     def __init__(self, num_feat: int, num_hidden: int, depth: int,
                  kernel_size: Union[int, Tuple[int, int]] = (3, 3),
+                 w_scale=None,
                  conv_bias: bool = False):
         super().__init__()
         self.num_feat = num_feat
@@ -58,6 +59,9 @@ class DQN(Module):
         # pool layers for calculate representations of board as a whole
         self.max_pool = AdaptiveMaxPool2d(output_size=(1, 1))
         self.avg_pool = AdaptiveAvgPool2d(output_size=(1, 1))
+
+        if w_scale is not None:
+            util.init_weights(self, w_scale)
 
     def forward(self, s: torch.Tensor,
                 a: Union[torch.Tensor,
