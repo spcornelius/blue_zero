@@ -1,13 +1,5 @@
 import numpy as np
 import torch
-import random
-
-random.seed(0)
-torch.manual_seed(0)
-torch.cuda.manual_seed_all(0)
-np.random.seed(0)
-torch.backends.cudnn.benchmark = True
-torch.backends.cudnn.deterministic = True
 
 from path import Path
 
@@ -39,10 +31,6 @@ torch.save(net.state_dict(), untrained_model_save_file)
 
 agent = Agent(net)
 target_agent = Agent(net)
-
-
-
-
 
 train_set = gen_playable_envs(hp.train_set_size)
 validation_set = gen_playable_envs(hp.validation_set_size)
