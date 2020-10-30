@@ -1,50 +1,101 @@
 from dataclasses import dataclass
+from argparse_dataclass import ArgumentParser
 
-__all__ = ['HyperParams']
+
+__all__ = ['HyperParams', 'hp_parser']
 
 
 @dataclass
 class HyperParams:
+    ############################
     # EMBEDDING/Q NET
-    depth: int = 5  # total number of convolutional layers
-    num_feat: int = 32  # no. of node features (= no. of conv. filters)
-    num_hidden: int = 128   # size of hidden layer between inputs (embedded
-                            # node feats. + pools of board state) and final
-                            # output (q value) for each node
-    kernel_size: tuple = (3, 3)  # size of kernel for convolution
-    w_scale = 0.01  # initial network weights drawn from
-                    # uniform(-w_scale, w_scale)
+    ############################
 
+    # number of convolutional layers (embedding step)
+    depth: int = 5
+
+    # dimension of space in which to embed each board square
+    num_feat: int = 32
+
+    # number of hidden neurons between inputs (embedded state) and outputs
+    # (q value for each square)
+    num_hidden: int = 128
+
+    # size of 2D convolution kernel
+    kernel_size: tuple = (3, 3)
+
+    # initialize all network weights uniformly between (-w_scale, w_scale)
+    w_scale = 0.01
+
+    ############################
     # TRAINING
-    gamma: float = 1.0  # discount factor
-    lr: float = 1e-4    # learning rate
-    batch_size: int = 64  # num. of states to use per training iteration
-    max_epochs: int = 10 ** 5  # number of trains to do before terminating
+    ############################
+
+    # learning rate
+    lr: float = 1e-4
+
+    # how many boards to use per stochastic gradient descent iteration
+    batch_size: int = 64
+
+    # maximum number of training iterations to perform
+    max_epochs: int = 10 ** 5
+
+    # every this many epochs, have agent play through some training examples
+    # and store in replay buffer
     play_freq: int = 100   # Rate at which to play envs
-    num_play: int = 100   # Number of environments to play at every "play" step
-    train_set_size = 100_000  # Number of random grids to use for training
 
+    # number of environments from train set to play through/store each time
+    num_play: int = 100
+
+    ############################
     # ANNEALING
-    eps_start: float = 1.0  # start prob. to pick random move (greedy epsilon)
+    ############################
+
+    # initial random move probability for greedy epsilon strategy
+    eps_start: float = 1.0  #
+
+    # final random move probability for greedy epsilon strategy
     eps_end: float = 0.01  # final prob. to pick random move (greedy-epsilon)
-    eps_decay_time: float = 10 ** 4  # decay eps over this many epochs
-    hard_update_freq: int = 1000      # 'hard' update target net every this
-                                      # many epochs
-    soft_update_rate: float = 0.0001  # 'soft' update rate for target net
-    target_update_mode: str = 'hard'  # one ['hard', 'soft']; method used to
-                                      # update target net from policy net
 
-    # FITTING/LOSS FUNCTION
-    max_grad_norm: float = 1.0  # clip the magnitudes of gradients to this
-                                # value before backward pass
+    # number of epochs over which to linearly decay eps from eps_start to
+    # eps_end
+    eps_decay_time: float = 10 ** 4
 
-    # MEMORY
-    mem_size: int = 10 ** 6  # max no. of transitions to store in replay
-    num_burn_in: int = 100   # no. of environments to play and store in replay
-                             # memory before start of training
-    step_diff: int = 1  # no. of steps to use between initial/target states
+    # method used to update target net from policy net
+    # one of ['hard', 'soft']
+    target_update_mode: str = 'hard'
 
-    # VALIDATION
-    validation_freq: int = 100  # perform validation every this many epochs
-    validation_set_size = 100  # Number of random grids to use for validation
+    # hard update the target network every this many epochs
+    # (only used if target_update_mode = 'hard')
+    hard_update_freq: int = 1000
 
+    # rate at which to soft update target network parameters every epoch
+    # (only used if target_update_mode = 'soft')
+    soft_update_rate: float = 0.0001
+
+    ############################
+    # FITTING
+    ############################
+
+    # discount factor for future rewards
+    gamma: float = 1.0
+
+    # clip the magnitudes of parameter gradients to this value
+    # before backward pass
+    max_grad_norm: float = 1.0
+
+    ############################
+    # REPLAY MEMORY
+    ############################
+
+    # capacity of replay buffer
+    mem_size: int = 10 ** 6
+
+    # number of complete environments to play through/store before training
+    num_burn_in: int = 100
+
+    # the "N" in "N-Step" replay memory
+    step_diff: int = 1
+
+
+hp_parser = ArgumentParser(HyperParams)
