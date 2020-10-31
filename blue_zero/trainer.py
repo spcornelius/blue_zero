@@ -8,8 +8,9 @@ from gym import Env
 from torch.nn.utils import clip_grad_norm_
 
 from blue_zero.agent import Agent
-from blue_zero.hyper import HyperParams
+from blue_zero.hyper import TrainParams
 from blue_zero.replay import NStepReplayMemory
+from torch.nn import Module
 
 __all__ = []
 __all__.extend([
@@ -19,55 +20,63 @@ __all__.extend([
 
 class Trainer(object):
     """ Trains an Agent via stochastic gradient descent using Double-Q learning
-        Use an epsilon-greedy strategy to balance exploration vs.
-        exploitation, with a linear decay in epsilon. """
+        Use an epsilon-greedy strategy to balance exploration vs. exploitation,
+        with a linear decay in epsilon. """
 
-    def __init__(self, agent: Agent, target_agent: Agent,
+    def __init__(self, net: Module,
                  train_set: Iterable[Env],
                  validation_set: Iterable[Env],
-                 hp: HyperParams,
-                 device: str = 'cpu'):
+                 p: TrainParams,
+                 device='cpu'):
 
         super().__init__()
-        self.agent = agent.to(device=device)
-        self.target_agent = target_agent.to(device=device)
+        self.agent = Agent(net).to(device=device)
+        self.target_agent = deepcopy(self.agent)
         self.agent.train()
         self.target_agent.eval()
-        self.train_set = train_set
-        self.validation_set = validation_set
+        self.train_set = list(train_set)
+        self.validation_set = list(validation_set)
 
-        self.hp = hp
-        self.device = device
-        self.memory = NStepReplayMemory(hp.mem_size, hp.step_diff,
+        self.memory = NStepReplayMemory(p.mem_size, p.step_diff,
                                         device=device)
 
-        self.optimizer = optim.Adam(self.agent.parameters(), lr=hp.lr)
+        if p.optimizer == 'adam':
+            optimizer = optim.Adam(self.agent.parameters(), lr=p.lr)
+        elif p.optimizer == 'sgd':
+            optimizer = optim.SGD(self.agent.parameters(), lr=p.lr)
+        elif p.optimizer == 'rmsprop':
+            optimizer = optim.RMSprop(self.agent.parameters(), lr=p.lr)
+        else:
+            raise ValueError(f"Unrecognized optimizer '{p.optimizer}'.")
+        self.optimizer = optimizer
         self.loss_func = torch.nn.MSELoss()
 
         self.epoch = 0
         self.best_epoch = None
         self.best_perf = np.inf
         self.best_params = None
+        self.p = p
+        self.device = device
 
     @property
     def eps(self):
         """ Current value of epsilon (random action probability). """
-        e1, e2, t = self.hp.eps_start, self.hp.eps_end, self.hp.eps_decay_time
+        e1, e2, t = self.p.eps_start, self.p.eps_end, self.p.eps_decay_time
         return e2 + max(0.0, (e1 - e2) * (t - self.epoch) / t)
 
     def train(self):
-        hp = self.hp
+        p = self.p
 
         # burn-in
-        self.play_games(hp.num_burn_in, with_pbar=True)
+        self.play_games(p.num_burn_in, with_pbar=True)
 
         loss = np.nan
 
-        while self.epoch < hp.max_epochs:
-            if self.epoch % hp.play_freq == 0:
-                self.play_games(hp.num_play)
+        while self.epoch < p.max_epochs:
+            if self.epoch % p.play_freq == 0:
+                self.play_games(p.num_play)
 
-            if self.epoch % hp.validation_freq == 0:
+            if self.epoch % p.validation_freq == 0:
                 sol_sizes = self.validate()
                 perf = np.mean(sol_sizes)
                 print(f"Epoch: {self.epoch}, avg. sol size: "
@@ -83,14 +92,14 @@ class Trainer(object):
             loss = self.fit()
             self.epoch += 1
 
-            if hp.target_update_mode == 'soft':
+            if p.target_update_mode == 'soft':
                 self._soft_update_target()
-            elif hp.target_update_mode == 'hard' and \
-                    self.epoch % hp.hard_update_freq == 0:
+            elif p.target_update_mode == 'hard' and \
+                    self.epoch % p.hard_update_freq == 0:
                 self._hard_update_target()
 
     def _soft_update_target(self) -> None:
-        tau = self.hp.soft_update_rate
+        tau = self.p.soft_update_rate
         # soft update target network
         for p, p_target in zip(self.agent.net.parameters(),
                                self.target_agent.net.parameters()):
@@ -105,7 +114,7 @@ class Trainer(object):
         """ Perform one optimization step, sampling a batch of transitions
             from replay memory and performing stochastic gradient descent.
         """
-        s_prev, a, s, dr, terminal = self.memory.sample(self.hp.batch_size)
+        s_prev, a, s, dr, terminal = self.memory.sample(self.p.batch_size)
 
         # get reward-to-go from state s from TARGET net
         _, q = self.target_agent.get_action(s, return_q=True)
@@ -115,17 +124,17 @@ class Trainer(object):
 
         # shouldn't be necessary as the optimizer only knows about the policy
         # net's parameters, but make sure the target q values don't contribute
-        # to the gradeint (target network is fixed in Double DQN)
+        # to the gradient (target network is fixed in Double DQN)
         q = q.detach()
 
         # get past q estimate using POLICY net
         q_prev = self.agent.net(s_prev, a=a)
 
         self.optimizer.zero_grad()
-        loss = self.loss_func(q_prev, dr + self.hp.gamma * q)
+        loss = self.loss_func(q_prev, dr + self.p.gamma * q)
         loss.backward()
 
-        clip_grad_norm_(self.agent.parameters(), self.hp.max_grad_norm)
+        clip_grad_norm_(self.agent.parameters(), self.p.max_grad_norm)
         self.optimizer.step()
         return loss.detach()
 
@@ -161,5 +170,6 @@ class Trainer(object):
 
         # use a full greedy strategy (eps=0) for validation
         self.agent.play_envs(self.validation_set,
-                             eps=0, with_pbar=with_pbar, device=self.device)
+                             eps=0, with_pbar=with_pbar,
+                             device=self.device)
         return np.mean([e.sol_size for e in self.validation_set])

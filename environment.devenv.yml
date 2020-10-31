@@ -14,10 +14,11 @@ dependencies:
   - pip
   - python >=3.8
   - pytorch >=1.6
+  - pyyaml
   - tqdm
   - pip:
-      - argparse
       - gym
       - ipdb
       - path.py
       - pygame >=2.0.0
+      - simple-parsing

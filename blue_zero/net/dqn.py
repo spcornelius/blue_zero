@@ -3,8 +3,9 @@ from typing import List, Union, Tuple
 import torch
 from torch.nn import Conv2d, Module, ReLU, Sequential, \
     AdaptiveMaxPool2d, AdaptiveAvgPool2d
-from blue_zero.config import Status
+
 import blue_zero.util as util
+from blue_zero.config import Status
 
 __all__ = ['DQN']
 
@@ -13,8 +14,7 @@ class DQN(Module):
 
     def __init__(self, num_feat: int, num_hidden: int, depth: int,
                  kernel_size: Union[int, Tuple[int, int]] = (3, 3),
-                 w_scale=None,
-                 conv_bias: bool = False):
+                 with_conv_bias: bool = False):
         super().__init__()
         self.num_feat = num_feat
         self.num_hidden = num_hidden
@@ -30,7 +30,7 @@ class DQN(Module):
         layers = [Conv2d(4, num_feat,
                          kernel_size=kernel_size,
                          padding=padding,
-                         bias=conv_bias),
+                         bias=with_conv_bias),
                   ReLU()]
 
         # subsequent convolutions (always with num_feat channels)
@@ -38,7 +38,7 @@ class DQN(Module):
             layers.append(Conv2d(num_feat, num_feat,
                                  kernel_size=kernel_size,
                                  padding=padding,
-                                 bias=conv_bias))
+                                 bias=with_conv_bias))
             layers.append(ReLU())
 
         self.embed = Sequential(*layers)
@@ -59,9 +59,6 @@ class DQN(Module):
         # pool layers for calculate representations of board as a whole
         self.max_pool = AdaptiveMaxPool2d(output_size=(1, 1))
         self.avg_pool = AdaptiveAvgPool2d(output_size=(1, 1))
-
-        if w_scale is not None:
-            util.init_weights(self, w_scale)
 
     def forward(self, s: torch.Tensor,
                 a: Union[torch.Tensor,
@@ -108,7 +105,7 @@ class DQN(Module):
                    s[:, Status.attacked, :, :].byte()).bool()
         adv.masked_fill_(invalid, 0.0)
         adv_mean = adv.sum(dim=(1, 2), keepdim=True) / \
-                   (~invalid).sum(dim=(1, 2), keepdim=True)
+            (~invalid).sum(dim=(1, 2), keepdim=True)
 
         # finally, get q values for each square
         # q will have shape (batch_size, h, w)

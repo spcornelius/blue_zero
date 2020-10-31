@@ -1,47 +1,51 @@
+from dataclasses import dataclass
+
 import numpy as np
-import torch
-
 from path import Path
-
-import blue_zero.util as util
-from blue_zero.agent import Agent
+from simple_parsing import ArgumentParser, field
 from blue_zero.hyper import HyperParams
+from blue_zero.env import Blue
 from blue_zero.net.dqn import DQN
 from blue_zero.trainer import Trainer
 
-device = 'cuda:1'
-p = 0.62
-n = 20
 
-untrained_model_save_file = Path(f"./saved_models/untrained_model_{n}.pt")
-trained_model_save_file = Path(f"./saved_models/trained_model_{n}.pt")
-validation_data_save_file = Path(f"./validation_data/validation_data_{n}.npy")
+@dataclass
+class Options:
+    """ options """
+    # .yml file containing HyperParams
+    config_file: Path = field(alias='-c', required=True)
 
-hp = HyperParams()
-net = DQN(hp.num_feat, hp.num_hidden, hp.depth,
-          kernel_size=hp.kernel_size)
-target_net = DQN(hp.num_feat, hp.num_hidden, hp.depth,
-                 kernel_size=hp.kernel_size)
+    # .npy file containing training boards
+    train_file: Path = field(alias='-t', required=True)
 
-util.init_weights(net, hp.w_scale)
-util.init_weights(target_net, hp.w_scale)
+    # .npy file containing validation boards
+    validation_file: Path = field(alias='-v', required=True)
 
-# save initial (untrained) model
-torch.save(net.state_dict(), untrained_model_save_file)
+    # where to save final trained model
+    output_file: Path = field(alias='-o', required=True)
 
-agent = Agent(net)
-target_agent = Agent(net)
+    # device to train on
+    device: str = 'cpu'
 
-train_set = gen_playable_envs(hp.train_set_size)
-validation_set = gen_playable_envs(hp.validation_set_size)
 
-# save validation data
-np.save(validation_data_save_file,
-        np.stack([e.state for e in validation_set], axis=0))
+def load_envs(board_file):
+    return list(map(Blue, np.load(board_file)))
 
-trainer = Trainer(agent, target_agent,
-                  train_set, validation_set,
-                  hp, device=device)
 
-trainer.train()
-torch.save(trainer.best_params, trained_model_save_file)
+def main(config_file: Path, train_file: Path, validation_file: Path,
+         output_file: Path, device: str = 'cpu'):
+    train_set = load_envs(train_file)
+    validation_set = load_envs(validation_file)
+    hp = HyperParams.load(config_file)
+    net = DQN(**vars(hp.net_params))
+    trainer = Trainer(net, train_set, validation_set, hp.train_params,
+                      device=device)
+    trainer.train()
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser(add_dest_to_option_strings=False,
+                            add_option_string_dash_variants=True)
+    parser.add_arguments(Options, "options")
+    args = parser.parse_args()
+    main(**vars(args.options))

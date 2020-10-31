@@ -1,101 +1,95 @@
 from dataclasses import dataclass
-from argparse_dataclass import ArgumentParser
+from simple_parsing import choice, Serializable
 
 
-__all__ = ['HyperParams', 'hp_parser']
+__all__ = ['NetParams', 'TrainParams', 'HyperParams']
 
 
 @dataclass
-class HyperParams:
-    ############################
-    # EMBEDDING/Q NET
-    ############################
+class NetParams(Serializable):
+    """ parameters for deep Q network """
 
-    # number of convolutional layers (embedding step)
-    depth: int = 5
+    # number of convolutional layers in embedding
+    depth: int
 
-    # dimension of space in which to embed each board square
-    num_feat: int = 32
+    # dimension of embedding
+    num_feat: int
 
-    # number of hidden neurons between inputs (embedded state) and outputs
-    # (q value for each square)
-    num_hidden: int = 128
+    # number of hidden neurons between embedding and outputs
+    num_hidden: int
 
-    # size of 2D convolution kernel
-    kernel_size: tuple = (3, 3)
+    # size of embedding convolution kernel
+    kernel_size: int
 
-    # initialize all network weights uniformly between (-w_scale, w_scale)
-    w_scale = 0.01
+    # include bias terms in convolutions
+    with_conv_bias: bool
 
-    ############################
-    # TRAINING
-    ############################
+
+@dataclass
+class TrainParams(Serializable):
+    """ parameters for double-Q learning with N-step replay memory """
 
     # learning rate
-    lr: float = 1e-4
+    lr: float
 
-    # how many boards to use per stochastic gradient descent iteration
-    batch_size: int = 64
+    # number of replay transitions to fit during each optimization step
+    batch_size: int
 
     # maximum number of training iterations to perform
-    max_epochs: int = 10 ** 5
+    max_epochs: int
 
-    # every this many epochs, have agent play through some training examples
-    # and store in replay buffer
-    play_freq: int = 100   # Rate at which to play envs
+    # play through/store training examples every this many epochs
+    play_freq: int
 
-    # number of environments from train set to play through/store each time
-    num_play: int = 100
-
-    ############################
-    # ANNEALING
-    ############################
+    # number of training examples to play each time
+    num_play: int
 
     # initial random move probability for greedy epsilon strategy
-    eps_start: float = 1.0  #
+    eps_start: float
 
     # final random move probability for greedy epsilon strategy
-    eps_end: float = 0.01  # final prob. to pick random move (greedy-epsilon)
+    eps_end: float
 
-    # number of epochs over which to linearly decay eps from eps_start to
-    # eps_end
-    eps_decay_time: float = 10 ** 4
-
-    # method used to update target net from policy net
-    # one of ['hard', 'soft']
-    target_update_mode: str = 'hard'
+    # number of epochs to go from eps_start to eps_end
+    eps_decay_time: float
 
     # hard update the target network every this many epochs
-    # (only used if target_update_mode = 'hard')
-    hard_update_freq: int = 1000
+    # (ignored unless target_update_mode = hard)
+    hard_update_freq: int
 
     # rate at which to soft update target network parameters every epoch
-    # (only used if target_update_mode = 'soft')
-    soft_update_rate: float = 0.0001
+    # (ignored unless target_update_mode = soft)
+    soft_update_rate: float
 
-    ############################
-    # FITTING
-    ############################
-
-    # discount factor for future rewards
-    gamma: float = 1.0
-
-    # clip the magnitudes of parameter gradients to this value
-    # before backward pass
-    max_grad_norm: float = 1.0
-
-    ############################
-    # REPLAY MEMORY
-    ############################
-
-    # capacity of replay buffer
-    mem_size: int = 10 ** 6
+    # size of replay buffer
+    mem_size: int
 
     # number of complete environments to play through/store before training
-    num_burn_in: int = 100
+    num_burn_in: int
+
+    # discount factor for future rewards
+    gamma: float
+
+    # clip gradient norms to no more than this value
+    max_grad_norm: float
 
     # the "N" in "N-Step" replay memory
-    step_diff: int = 1
+    step_diff: int
+
+    # play through validation data every this many epochs
+    validation_freq: int
+
+    # optimizer to use
+    optimizer: str = choice('adam', 'sgd', 'rmsprop')
+
+    # method used to update target net from policy net
+    target_update_mode: str = choice('hard', 'soft')
 
 
-hp_parser = ArgumentParser(HyperParams)
+@dataclass
+class HyperParams(Serializable):
+    """ Combined hyperparameters (network + training) representing a
+        single training run. """
+
+    net_params: NetParams
+    train_params: TrainParams
