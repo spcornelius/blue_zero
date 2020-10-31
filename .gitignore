@@ -1,0 +1,16 @@
+.idea/
+.*cache/
+*.egg-info/
+build/
+dist/
+trained_models/*
+**/.ipynb_checkpoints/
+**/*.pyc
+**/__pycache__
+
+*.npy
+*.pt
+*.c
+*.so
+.envrc
+environment.yml
