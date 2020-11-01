@@ -1,8 +1,10 @@
 import argparse
+
 import numpy as np
-from blue_zero.config import Status
 from path import Path
 
+from blue_zero.config import Status
+from blue_zero.env import Blue
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--num-boards', type=int, required=True,
@@ -23,11 +25,16 @@ parser.add_argument('-o', dest='out_file', metavar='OUT_FILE',
 def gen_random(n, p_min, p_max,
                num_boards=1):
     boards = []
-    for _ in range(num_boards):
+    while len(boards) < num_boards:
         b = np.empty((n, n), dtype=np.int)
         b.fill(Status.wall)
         p = np.random.uniform(p_min, p_max)
         b[np.random.uniform(size=(n, n)) < p] = Status.alive
+
+        # only retain states that aren't already terminal
+        env = Blue(b)
+        if env.done:
+            continue
         boards.append(b)
 
     return np.stack(boards)
@@ -41,7 +48,7 @@ def main():
         p_min, p_max = args.p, args.p
     boards = gen_random(args.n, p_min, p_max, num_boards=args.num_boards)
     if args.out_file.exists():
-        raise FileExistsError(f"Output file {args.out_file} already exists. " 
+        raise FileExistsError(f"Output file {args.out_file} already exists. "
                               "Aborting.")
     np.save(args.out_file, boards)
 
