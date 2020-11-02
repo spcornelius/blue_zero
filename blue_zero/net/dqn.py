@@ -22,9 +22,13 @@ class DQN(Module):
         # pad with enough zeros so that convolutions preserve board shape
         try:
             h, w = kernel_size
-            padding = (h - 2, w - 2)
+            if (h % 2 == 0) or (w % 2 == 0):
+                raise ValueError("all dimensions of kernel_size must be odd")
+            padding = (h // 2, w // 2)
         except TypeError:
-            padding = kernel_size - 2
+            if kernel_size % 2 == 0:
+                raise ValueError("kernel_size must be odd")
+            padding = kernel_size // 2
 
         # initial convolution (1 channel input --> num_feat channel output)
         layers = [Conv2d(4, num_feat,
