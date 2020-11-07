@@ -60,10 +60,6 @@ class DQN(Module):
                                     Conv2d(num_hidden, 1,
                                            kernel_size=(1, 1), bias=True))
 
-        # pool layers for calculate representations of board as a whole
-        self.max_pool = AdaptiveMaxPool2d(output_size=(1, 1))
-        self.avg_pool = AdaptiveAvgPool2d(output_size=(1, 1))
-
     def forward(self, s: torch.Tensor,
                 a: Union[torch.Tensor,
                          tuple, List[tuple]] = None) -> torch.Tensor:
@@ -84,8 +80,8 @@ class DQN(Module):
 
         # use pooling to calculate 3 different representations of board
         # as a whole.
-        avg = self.avg_pool(a_rep)
-        max_ = self.max_pool(a_rep)
+        avg = torch.mean(a_rep, dim=(2, 3), keepdim=True)
+        max_ = torch.amax(a_rep, dim=(2, 3), keepdim=True)
         sum_ = h * w * avg
 
         # representation of board state as a whole
