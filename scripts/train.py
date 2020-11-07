@@ -3,8 +3,10 @@ from dataclasses import dataclass
 import numpy as np
 from path import Path
 from simple_parsing import ArgumentParser, field
-from blue_zero.hyper import HyperParams
+
+import blue_zero.util as util
 from blue_zero.env import Blue
+from blue_zero.hyper import HyperParams
 from blue_zero.net.dqn import DQN
 from blue_zero.trainer import Trainer
 
@@ -27,13 +29,18 @@ class Options:
     # device to train on
     device: str = 'cpu'
 
+    # random seed
+    seed: int = field(alias='-s', default=None)
+
 
 def load_envs(board_file):
     return list(map(Blue, np.load(board_file)))
 
 
 def main(config_file: Path, train_file: Path, validation_file: Path,
-         output_file: Path, device: str = 'cpu'):
+         output_file: Path, device: str = 'cpu', seed: int = None):
+    if seed is not None:
+        util.set_seed(seed)
     train_set = load_envs(train_file)
     validation_set = load_envs(validation_file)
     hp = HyperParams.load(config_file)

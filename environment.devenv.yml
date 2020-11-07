@@ -7,13 +7,14 @@ channels:
 
 dependencies:
   - contextlib2
+  - cudatoolkit =11.0
   - cython
   - ipython
   - matplotlib
   - numpy
   - pip
   - python >=3.8
-  - pytorch >=1.6
+  - pytorch >=1.7
   - pyyaml
   - tqdm
   - pip:

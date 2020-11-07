@@ -1,6 +1,9 @@
 from blue_zero.env import Blue
 import blue_zero.config as cfg
 import torch
+import os
+import random
+import numpy as np
 
 __all__ = ['gen_random_env', 'init_weights', 'to_bitboard']
 
@@ -33,3 +36,12 @@ def to_bitboard(s: torch.Tensor):
     dim = 0 if s.ndim == 2 else 1
     return torch.stack([s == status for status in cfg.Status],
                        dim=dim).float()
+
+
+def set_seed(seed):
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    torch.set_deterministic(True)
