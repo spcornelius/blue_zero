@@ -99,8 +99,10 @@ class Blue(Env):
 
         # get reward and update state
         dr = self.reward(ij)
+        needs_update = self.state[i, j] == Status.alive
         self.state[i, j] = Status.attacked
-        self.update()
+        if needs_update:
+            self.update()
         self.r += dr
         self.steps_taken += 1
 
