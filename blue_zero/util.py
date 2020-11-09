@@ -4,6 +4,7 @@ import torch
 import os
 import random
 import numpy as np
+from wurlitzer import pipes
 
 __all__ = ['gen_random_env', 'init_weights', 'to_bitboard']
 
@@ -44,4 +45,5 @@ def set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
-    torch.set_deterministic(True)
+    with pipes() as (out, err):
+        torch.set_deterministic(True)
