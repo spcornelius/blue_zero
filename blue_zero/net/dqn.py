@@ -1,8 +1,7 @@
 from typing import List, Union, Tuple
 
 import torch
-from torch.nn import Conv2d, Module, ReLU, Sequential, \
-    AdaptiveMaxPool2d, AdaptiveAvgPool2d
+from torch.nn import Conv2d, Module, ReLU, Sequential
 
 import blue_zero.util as util
 from blue_zero.config import Status
@@ -16,8 +15,14 @@ class DQN(Module):
                  kernel_size: Union[int, Tuple[int, int]] = (3, 3),
                  with_conv_bias: bool = False):
         super().__init__()
+
+        # store constructor parameters in case we want to save the net
+        # to a file
         self.num_feat = num_feat
         self.num_hidden = num_hidden
+        self.depth = depth
+        self.kernel_size = kernel_size
+        self.with_conv_bias = with_conv_bias
 
         # pad with enough zeros so that convolutions preserve board shape
         try:
@@ -59,6 +64,21 @@ class DQN(Module):
                                     ReLU(),
                                     Conv2d(num_hidden, 1,
                                            kernel_size=(1, 1), bias=True))
+
+    def save(self, file):
+        state = dict(num_feat=self.num_feat, num_hidden=self.num_hidden,
+                     depth=self.depth, kernel_size=self.kernel_size,
+                     with_conv_bias=self.with_conv_bias,
+                     state_dict={k: v.cpu() for k, v in self.state_dict()})
+        torch.save(state, file)
+
+    @classmethod
+    def load(cls, file):
+        state = torch.load(file)
+        state_dict = state.pop('state_dict')
+        net = cls(**state)
+        net.load_state_dict(state_dict)
+        return net
 
     def forward(self, s: torch.Tensor,
                 a: Union[torch.Tensor,
