@@ -3,7 +3,6 @@
 *.egg-info/
 build/
 dist/
-trained_models/*
 **/.ipynb_checkpoints/
 **/*.pyc
 **/__pycache__

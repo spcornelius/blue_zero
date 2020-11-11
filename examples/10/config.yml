@@ -1,0 +1,25 @@
+net_params:
+  depth: 5
+  kernel_size: 3
+  num_feat: 64
+  num_hidden: 128
+  with_conv_bias: false
+train_params:
+  batch_size: 64
+  eps_decay_time: 10000
+  eps_end: 0.01
+  eps_start: 1.0
+  gamma: 1.0
+  hard_update_freq: 1000
+  lr: 0.0001
+  max_epochs: 100000
+  max_grad_norm: 1.0
+  mem_size: 1000000
+  num_burn_in: 100
+  num_play: 100
+  optimizer: adam
+  play_freq: 100
+  soft_update_rate: 0.0001
+  validation_freq: 100
+  step_diff: 1
+  target_update_mode: hard
