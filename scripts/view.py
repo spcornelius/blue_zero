@@ -1,60 +1,58 @@
 import sys
+from dataclasses import dataclass
 from time import sleep
 
-import numpy as np
 import pygame
-import torch
 from path import Path
+from simple_parsing import ArgumentParser, field
 
 from blue_zero.agent import Agent
 from blue_zero.env.blue import Blue
-from blue_zero.hyper import HyperParams
 from blue_zero.net.dqn import DQN
 
-np.random.seed(0)
-torch.random.manual_seed(0)
 
-n = 40
-p = 0.65
-device = 'cuda:1'
-idx = 1
+@dataclass
+class Options:
+    # .pt file containing a trained model
+    file: Path = field(alias='-f', required=True)
 
-untrained_model_save_file = Path(f"./saved_models/untrained_model_10.pt")
-trained_model_save_file = Path(f"./saved_models/trained_model_10.pt")
-# validation_data_save_file = Path(f"./validation_data/validation_data_{
-# n}.npy")
+    # size of board to play on
+    n: int = field(alias='-n', required=True)
 
-hp = HyperParams()
-net = DQN(hp.num_feat, hp.num_hidden, hp.depth,
-          kernel_size=hp.kernel_size)
+    # green probability
+    p: float = field(alias='-p', required=True)
 
-smart_net = DQN(hp.num_feat, hp.num_hidden, hp.depth,
-                kernel_size=hp.kernel_size)
-smart_net.load_state_dict(torch.load(trained_model_save_file))
-smart_net.eval()
-smart_agent = Agent(smart_net)
+    # time delay between taking moves
+    pause: float = 0.2
 
-dumb_net = DQN(hp.num_feat, hp.num_hidden, hp.depth,
-               kernel_size=hp.kernel_size)
-dumb_net.load_state_dict(torch.load(untrained_model_save_file))
-dumb_net.eval()
-dumb_agent = Agent(dumb_net)
 
-# validation_set = np.load(validation_data_save_file)
-# state = validation_set[idx].squeeze()
-env = Blue.from_random((n, n), p, with_gui=True)
+def main(file: Path, n: int, p: float,
+         pause: float = 0.2):
+    net = DQN.load(file)
+    agent = Agent(net)
+    env = Blue.from_random((n, n), p, with_gui=True)
 
-event = pygame.event.wait()
-done = False
+    started = False
+    print("Click anywhere to start playing.")
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit(0)
+            elif event.type == pygame.MOUSEBUTTONDOWN and not started:
+                print("Playing!")
+                started = True
+        if not started:
+            continue
 
-sleep(5.0)
-dumb_agent.play_envs([env], pause=0.2)
-sleep(5.0)
-env.reset()
-sleep(2.0)
-smart_agent.play_envs([env], pause=0.2)
+        if not env.done:
+            a = agent.get_action(env.state, eps=0.0)
+            env.step(a)
+            sleep(pause)
 
-while True:
-    event = pygame.event.wait()
-    if event.type == pygame.QUIT:
-        sys.exit(0)
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_arguments(Options, "options")
+    options = parser.parse_args().options
+    main(options.file, options.n, options.p,
+         pause=options.pause)
