@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 from time import sleep
-from typing import Iterable
+from typing import Union, List
 
 import numpy as np
 import torch
+from gym import Env
 from torch.nn.functional import softmax
 from tqdm import tqdm
-
-from blue_zero.env.blue import Blue
 
 __all__ = []
 __all__.extend([
@@ -80,16 +79,19 @@ class Agent(object):
 
         return (a, q) if return_q else a
 
-    def play_envs(self, envs: Iterable[Blue],
+    def play_envs(self, envs: List[Env],
                   eps: float = 0.0,
-                  with_pbar: bool = False,
-                  pause=0.,
+                  pbar: Union[bool, tqdm] = False,
+                  pause: float = 0.,
                   device='cpu') -> None:
 
         envs = list(envs)
-        if with_pbar:
-            pbar = tqdm(total=len(envs))
+        close_when_done = False
+        if pbar is True:
+            pbar = tqdm(total=len(envs), desc="Playing")
+            close_when_done = True
 
+        pbar.update(sum(1 for e in envs if e.done))
         while unfinished_envs := [e for e in envs if not e.done]:
             # batch the states together
             batch = np.stack([e.state for e in unfinished_envs])
@@ -98,12 +100,13 @@ class Agent(object):
             for i, (e, a) in enumerate(zip(unfinished_envs, actions)):
                 _, _, done, _ = e.step(a)
 
-                if done and with_pbar:
+                if done and pbar:
                     pbar.update(1)
+                    pbar.refresh()
 
             sleep(pause)
 
-        if with_pbar:
+        if pbar and close_when_done:
             pbar.close()
 
     def copy(self) -> Agent:

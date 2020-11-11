@@ -5,17 +5,26 @@ import numpy as np
 import torch
 import torch.optim as optim
 from gym import Env
+from torch.nn import Module
 from torch.nn.utils import clip_grad_norm_
+from tqdm import tqdm
+from tqdm.std import Bar
 
 from blue_zero.agent import Agent
 from blue_zero.hyper import TrainParams
 from blue_zero.replay import NStepReplayMemory
-from torch.nn import Module
 
 __all__ = []
 __all__.extend([
     'Trainer'
 ])
+
+BOLD = '\033[1m'
+END = '\033[0m'
+
+l_bar = '{desc}: {percentage:3.0f}%|'
+r_bar = '| {n_fmt}/{total_fmt} [{rate_fmt}{postfix}]'
+format = f"{l_bar}{{bar}}{r_bar}"
 
 
 class Trainer(object):
@@ -58,6 +67,22 @@ class Trainer(object):
         self.p = p
         self.device = device
 
+        self.train_pbar = tqdm(total=p.max_epochs, position=0,
+                               desc="Training", unit=" epochs",
+                               leave=False)
+        self.log_pbar = tqdm(position=2, total=0,
+                             bar_format='{desc}')
+        self.play_pbar = tqdm(total=p.num_play, position=1,
+                              desc="    Playing", unit=" games",
+                              bar_format=format)
+        self.validate_pbar = tqdm(total=len(self.validation_set), position=1,
+                                  desc="    Validating", unit=" games",
+                                  bar_format=format, leave=False)
+        self.train_pbar.clear()
+        self.log_pbar.clear()
+        self.play_pbar.clear()
+        self.validate_pbar.clear()
+
     @property
     def eps(self):
         """ Current value of epsilon (random action probability). """
@@ -67,36 +92,40 @@ class Trainer(object):
     def train(self):
         p = self.p
 
-        # burn-in
-        self.play_games(p.num_burn_in, with_pbar=True)
+        print()
+
+        self.burn_in()
 
         loss = np.nan
-
+        self.train_pbar.refresh()
         while self.epoch < p.max_epochs:
             if self.epoch % p.play_freq == 0:
-                self.play_games(p.num_play)
+                self.play_pbar.reset()
+                self.play_games(p.num_play, pbar=self.play_pbar)
+                self.play_pbar.clear()
 
             if self.epoch % p.validation_freq == 0:
-                sol_sizes = self.validate()
-                perf = np.mean(sol_sizes)
-                print(f"Epoch: {self.epoch}, avg. sol size: "
-                      f"{perf:}, loss: {loss:1.3e}.")
-                if perf < self.best_perf:
-                    self.best_epoch, self.best_perf = self.epoch, perf
-                    best_params = deepcopy(self.agent.net.state_dict())
-                    for k, v in best_params.items():
-                        best_params[k] = v.cpu()
-                    self.best_params = best_params
+                perf = self.validate()
+                self.log_pbar.set_description_str(
+                    f"{BOLD}Loss: {loss:1.2e}  |  "
+                    f"Avg. moves to win: {perf:.2f}{END}"
+                )
 
             # do one fit iteration
             loss = self.fit()
             self.epoch += 1
+            self.train_pbar.update(1)
+            self.train_pbar.refresh()
 
+            # update target network from policy network if necessary, using
+            # the specified approach
             if p.target_update_mode == 'soft':
                 self._soft_update_target()
             elif p.target_update_mode == 'hard' and \
                     self.epoch % p.hard_update_freq == 0:
                 self._hard_update_target()
+
+        return self.agent.net
 
     def _soft_update_target(self) -> None:
         tau = self.p.soft_update_rate
@@ -109,6 +138,13 @@ class Trainer(object):
     def _hard_update_target(self) -> None:
         self.target_agent.net.load_state_dict(self.agent.net.state_dict())
         self.target_agent.eval()
+
+    def burn_in(self):
+        pbar = tqdm(total=self.p.num_burn_in, position=0,
+                    desc="Burning in", unit=" games",
+                    bar_format=format, leave=False)
+        self.play_games(self.p.num_burn_in, pbar=pbar)
+        pbar.close()
 
     def fit(self) -> float:
         """ Perform one optimization step, sampling a batch of transitions
@@ -138,7 +174,7 @@ class Trainer(object):
         self.optimizer.step()
         return loss.detach()
 
-    def play_games(self, n: int, with_pbar: bool = False):
+    def play_games(self, n: int, pbar: Bar = None):
         """ Play through n complete environments drawn from the training
             set using an epsilon-greedy strategy, then
             store completed envs in replay _memory. """
@@ -147,14 +183,14 @@ class Trainer(object):
         for e in envs:
             e.reset()
 
-        self.agent.play_envs(envs, eps=self.eps, with_pbar=with_pbar,
+        self.agent.play_envs(envs, pbar=pbar,
                              device=self.device)
 
         for e in envs:
             assert e.done
             self.memory.store(e)
 
-    def validate(self, with_pbar: bool = False) -> np.float:
+    def validate(self) -> np.float:
         """ Validate current policy net.
 
         Args:
@@ -168,8 +204,12 @@ class Trainer(object):
         for e in self.validation_set:
             e.reset()
 
+        self.validate_pbar.reset()
+
         # use a full greedy strategy (eps=0) for validation
         self.agent.play_envs(self.validation_set,
-                             eps=0, with_pbar=with_pbar,
+                             eps=0, pbar=self.validate_pbar,
                              device=self.device)
+        self.validate_pbar.clear()
+
         return np.mean([e.sol_size for e in self.validation_set])
