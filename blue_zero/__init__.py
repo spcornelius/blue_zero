@@ -8,11 +8,9 @@ import blue_zero.gui
 import blue_zero.util
 
 from blue_zero.replay import *
-from blue_zero.env import *
 from blue_zero.agent import *
 from blue_zero.hyper import *
 from blue_zero.clusters import *
 from blue_zero.gui import *
 from blue_zero.util import *
-from blue_zero.net import *
 
