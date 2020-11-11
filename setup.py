@@ -11,7 +11,7 @@ pkg_name = 'blue_zero'
 author = "Sean P. Cornelius"
 author_email = "spcornelius@gmail.com"
 
-install_requires = ['argparse', 'contextlib2',
+install_requires = ['argparse', 'contextlib2', 'wurlitzer',
                     'numpy', 'pygame', 'torch', 'tqdm', 'gym']
 
 args = sys.argv[1:]
