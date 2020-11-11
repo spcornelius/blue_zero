@@ -17,7 +17,8 @@ class BlueBase(Env):
 
     def __init__(self, state: '2D array_like',
                  with_gui: bool = False,
-                 screen_size: Tuple[int, int] = cfg.screen_size):
+                 screen_size: Tuple[int, int] = cfg.screen_size,
+                 **kwargs):
         super().__init__()
 
         state = np.asarray(state, dtype=np.float32)

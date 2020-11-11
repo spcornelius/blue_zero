@@ -1,5 +1,5 @@
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from time import sleep
 
 import pygame
@@ -7,9 +7,10 @@ from path import Path
 from simple_parsing import ArgumentParser, field
 
 from blue_zero.agent import Agent
-from blue_zero.env import BlueMode0, BlueMode3
+from blue_zero.env import ModeOptions
 from blue_zero.net.dqn import DQN
 from blue_zero.env.util import env_cls
+
 
 @dataclass
 class Options:
@@ -30,10 +31,10 @@ class Options:
 
 
 def main(file: Path, n: int, p: float, mode: int,
-         pause: float = 0.2):
+         pause: float = 0.2, **kwargs):
     net = DQN.load(file)
     agent = Agent(net)
-    env = env_cls[mode].from_random((n, n), p, with_gui=True)
+    env = env_cls[mode].from_random((n, n), p, with_gui=True, **kwargs)
 
     started = False
     print("Click anywhere to start playing.")
@@ -54,8 +55,11 @@ def main(file: Path, n: int, p: float, mode: int,
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser()
+    parser = ArgumentParser(add_dest_to_option_strings=False,
+                            add_option_string_dash_variants=True)
     parser.add_arguments(Options, "options")
-    options = parser.parse_args().options
-    main(options.file, options.n, options.p, options.mode,
-         pause=options.pause)
+    parser.add_arguments(ModeOptions, "mode_options")
+    args = parser.parse_args()
+    kwargs = asdict(args.options)
+    kwargs.update(args.mode_options.get_kwargs(args.options.mode))
+    main(**kwargs)
