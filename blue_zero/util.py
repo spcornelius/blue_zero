@@ -1,4 +1,3 @@
-from blue_zero.env import Blue
 import blue_zero.config as cfg
 import torch
 import os
@@ -6,11 +5,8 @@ import random
 import numpy as np
 from wurlitzer import pipes
 
-__all__ = ['gen_random_env', 'init_weights', 'to_bitboard']
 
-
-def gen_random_env(n, p):
-    return Blue.from_random((n, n), p, with_gui=False)
+__all__ = ['init_weights', 'to_bitboard', 'set_seed']
 
 
 def init_weights(module, w_scale):

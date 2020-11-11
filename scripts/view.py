@@ -7,9 +7,9 @@ from path import Path
 from simple_parsing import ArgumentParser, field
 
 from blue_zero.agent import Agent
-from blue_zero.env.blue import Blue
+from blue_zero.env import BlueMode0, BlueMode3
 from blue_zero.net.dqn import DQN
-
+from blue_zero.env.util import env_cls
 
 @dataclass
 class Options:
@@ -22,15 +22,18 @@ class Options:
     # green probability
     p: float = field(alias='-p', required=True)
 
+    # game mode
+    mode: int = field(required=True)
+
     # time delay between taking moves
     pause: float = 0.2
 
 
-def main(file: Path, n: int, p: float,
+def main(file: Path, n: int, p: float, mode: int,
          pause: float = 0.2):
     net = DQN.load(file)
     agent = Agent(net)
-    env = Blue.from_random((n, n), p, with_gui=True)
+    env = env_cls[mode].from_random((n, n), p, with_gui=True)
 
     started = False
     print("Click anywhere to start playing.")
@@ -54,5 +57,5 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_arguments(Options, "options")
     options = parser.parse_args().options
-    main(options.file, options.n, options.p,
+    main(options.file, options.n, options.p, options.mode,
          pause=options.pause)

@@ -1,16 +1,16 @@
 from dataclasses import dataclass
 
 import numpy as np
+import torch
 from path import Path
 from simple_parsing import ArgumentParser, field
 
 import blue_zero.util as util
-from blue_zero.env import Blue
+from blue_zero.env.util import env_cls
 from blue_zero.hyper import HyperParams
 from blue_zero.net.dqn import DQN
 from blue_zero.trainer import Trainer
 
-import torch
 torch.backends.cudnn.benchmark = True
 
 
@@ -29,6 +29,9 @@ class Options:
     # where to save final trained model
     output_file: Path = field(alias='-o', required=True)
 
+    # game mode
+    mode: int = field(required=True)
+
     # device to train on
     device: str = 'cpu'
 
@@ -36,16 +39,17 @@ class Options:
     seed: int = field(alias='-s', default=None, required=False)
 
 
-def load_envs(board_file):
-    return list(map(Blue, np.load(board_file)))
+def load_envs(board_file, mode):
+    return list(map(env_cls[mode], np.load(board_file)))
 
 
 def main(config_file: Path, train_file: Path, validation_file: Path,
-         output_file: Path, device: str = 'cpu', seed: int = None):
+         output_file: Path, mode: int,
+         device: str = 'cpu', seed: int = None):
     if seed is not None:
         util.set_seed(seed)
-    train_set = load_envs(train_file)
-    validation_set = load_envs(validation_file)
+    train_set = load_envs(train_file, mode)
+    validation_set = load_envs(validation_file, mode)
     hp = HyperParams.load(config_file)
     net = DQN(**vars(hp.net_params))
     trainer = Trainer(net, train_set, validation_set, hp.train_params,
