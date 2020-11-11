@@ -10,6 +10,9 @@ from blue_zero.hyper import HyperParams
 from blue_zero.net.dqn import DQN
 from blue_zero.trainer import Trainer
 
+import torch
+torch.backends.cudnn.benchmark = True
+
 
 @dataclass
 class Options:
@@ -30,7 +33,7 @@ class Options:
     device: str = 'cpu'
 
     # random seed
-    seed: int = field(alias='-s', default=None)
+    seed: int = field(alias='-s', default=None, required=False)
 
 
 def load_envs(board_file):
@@ -47,7 +50,8 @@ def main(config_file: Path, train_file: Path, validation_file: Path,
     net = DQN(**vars(hp.net_params))
     trainer = Trainer(net, train_set, validation_set, hp.train_params,
                       device=device)
-    trainer.train()
+    trained_net = trainer.train()
+    trained_net.save(output_file)
 
 
 if __name__ == "__main__":
