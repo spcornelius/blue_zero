@@ -17,7 +17,7 @@ env_cls = {
 @dataclass
 class Mode3Options:
     """ options for mode 3 """
-    # direction of current (mode 3 only)
+    # direction of current
     direction: str = choice('horizontal', 'vertical', 'both',
                             default='horizontal')
 
