@@ -1,5 +1,6 @@
 from typing import List, Union, Tuple
 
+import numpy as np
 import torch
 from torch.nn import Conv2d, Module, ReLU, Sequential
 
@@ -69,7 +70,8 @@ class DQN(Module):
         state = dict(num_feat=self.num_feat, num_hidden=self.num_hidden,
                      depth=self.depth, kernel_size=self.kernel_size,
                      with_conv_bias=self.with_conv_bias,
-                     state_dict={k: v.cpu() for k, v in self.state_dict()})
+                     state_dict={k: v.cpu() for k, v in
+                                 self.state_dict().items()})
         torch.save(state, file)
 
     @classmethod
@@ -80,9 +82,10 @@ class DQN(Module):
         net.load_state_dict(state_dict)
         return net
 
-    def forward(self, s: torch.Tensor,
+    def forward(self, s: Union[torch.Tensor, np.ndarray],
                 a: Union[torch.Tensor,
                          tuple, List[tuple]] = None) -> torch.Tensor:
+        s = torch.as_tensor(s)
         board_size = s.shape[-2:]
         h, w = board_size
 
@@ -125,7 +128,7 @@ class DQN(Module):
                    s[:, Status.attacked, :, :].byte()).bool()
         adv.masked_fill_(invalid, 0.0)
         adv_mean = adv.sum(dim=(1, 2), keepdim=True) / \
-            (~invalid).sum(dim=(1, 2), keepdim=True)
+                   (~invalid).sum(dim=(1, 2), keepdim=True)
 
         # finally, get q values for each square
         # q will have shape (batch_size, h, w)
