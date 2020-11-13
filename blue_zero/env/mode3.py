@@ -12,25 +12,36 @@ __all__.extend([
 
 class BlueMode3(BlueBase):
 
-    def __init__(self, *args, direction='horizontal', **kwargs):
-        self.direction = direction
+    def __init__(self, *args, direction: str = 'horizontal', **kwargs):
+        direction = direction.lower()
+        if direction not in ['horizontal', 'vertical', 'both']:
+            raise ValueError(
+                "direction must be one of ['horizontal', 'vertical', 'both']")
+        self.__direction = direction
+        self.__direction = direction
         super().__init__(*args, **kwargs)
 
-    def update(self):
-        s = self.state
-        not_blocked = np.logical_or(s == Status.alive, s == Status.dead)
-        clusters, sizes = find_clusters(not_blocked)
+    @property
+    def direction(self):
+        return self.__direction
+
+    def _get_spanning_clusters(self, clusters):
         left = set(clusters[:, 0])
         right = set(clusters[:, -1])
         top = set(clusters[0, :])
         bottom = set(clusters[-1, :])
         if self.direction == 'horizontal':
-            spanning_clusters = left & right
+            return left & right
         elif self.direction == 'vertical':
-            spanning_clusters = top & bottom
+            return top & bottom
         elif self.direction == 'both':
-            spanning_clusters = (left & right) | (top & bottom)
-        spanning_clusters.discard(0)
+            return (left & right) | (top & bottom)
+
+    def update(self):
+        s = self.state
+        not_blocked = np.logical_or(s == Status.alive, s == Status.dead)
+        clusters, sizes = find_clusters(not_blocked)
+        spanning_clusters = self._get_spanning_clusters(clusters)
         self.state[not_blocked] = Status.dead
         idx = np.isin(clusters, list(spanning_clusters))
         self.state[idx] = Status.alive
