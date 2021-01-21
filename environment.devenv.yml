@@ -14,6 +14,7 @@ dependencies:
   - more-itertools
   - numpy >=1.20.0
   - pip
+  - scipy
   - python >=3.8
   - pytorch >=1.7
   - pyyaml
