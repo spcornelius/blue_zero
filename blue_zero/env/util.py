@@ -43,5 +43,7 @@ class ModeOptions:
             return dict()
         elif mode == 3:
             return asdict(self.mode3)
+        elif mode == 4:
+            return asdict(self.mode4)
         else:
             raise ValueError(f"Unsupported mode: {mode}.")

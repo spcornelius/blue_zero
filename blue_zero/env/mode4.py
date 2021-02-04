@@ -35,15 +35,16 @@ class BlueMode4(BlueBase):
         touching_filter = np.array([[0,1,0],[1,0,1],[0,1,0]])
         #all sites are boundary sites or `not_blocked so we negate`
         boundary_contacts = convolve2d(~not_blocked, touching_filter, 
-                        mode="same",boundary="fill")
+                        mode="same",boundary="fill", fillvalue=1)
         boundary_contacts *= not_blocked
         #count total contacts per cluster (can this be vectorized?)
         cluster_contacts = np.zeros_like(sizes)
         for i in range(self.state.shape[0]):
             for j in range(self.state.shape[1]):
                 cluster_contacts[clusters[i,j]]+=boundary_contacts[i,j]
-
-        idx = (cluster_contacts[clusters] / sizes[clusters] <= self.K)
+        nonzerosizes = sizes[clusters] + (sizes[clusters] == 0).astype(int)
+        
+        idx = (cluster_contacts[clusters] / nonzerosizes >= self.K)
         self.state[idx] = Status.dead
         self._game_over = np.all(self.state != Status.alive)
         super().update()
