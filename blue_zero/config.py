@@ -19,7 +19,7 @@ green = (160, 185, 115, 255)
 # be used for padding around each cell
 pad_frac = 0.075
 
-screen_size = (1200, 1200)
+screen_size = (800, 800)
 
 color = {Status.wall: black,
          Status.attacked: orange,
