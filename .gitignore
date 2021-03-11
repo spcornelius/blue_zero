@@ -13,3 +13,4 @@ dist/
 *.so
 .envrc
 environment.yml
+.vscode
