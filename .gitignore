@@ -17,3 +17,4 @@ data/
 *.so
 .envrc
 environment.yml
+.vscode
