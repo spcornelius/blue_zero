@@ -45,6 +45,6 @@ SHELL ["conda", "run", "-n", "blue_zero", "/bin/bash", "-c" ]
 
 # Set your entrypoint to use the conda environment as well
 #ENTRYPOINT ["conda", "run", "-n", "blue_zero", "python", "run.py"]
-COPY blue_zero_entrypoint.sh .
+COPY ./docker/blue_zero_entrypoint.sh .
 ENTRYPOINT ["/bin/bash", "blue_zero_entrypoint.sh"]
 CMD ["bash"]
