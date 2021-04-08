@@ -35,7 +35,7 @@ RUN curl -sLo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-py38
  && conda install -y python==3.8.3 \
  && conda clean -ya
 
-COPY ../environment.devenv.yml .
+COPY environment.devenv.yml .
 
 
 RUN conda env create -f environment.devenv.yml
@@ -45,6 +45,6 @@ SHELL ["conda", "run", "-n", "blue_zero", "/bin/bash", "-c" ]
 
 # Set your entrypoint to use the conda environment as well
 #ENTRYPOINT ["conda", "run", "-n", "blue_zero", "python", "run.py"]
-COPY ./docker/blue_zero_entrypoint.sh .
-ENTRYPOINT ["/bin/bash", "blue_zero_entrypoint.sh"]
+ADD ./docker/blue_zero_entrypoint.sh entrypoint.sh
+ENTRYPOINT ["/bin/bash", "entrypoint.sh"]
 CMD ["bash"]

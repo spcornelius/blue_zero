@@ -8,5 +8,7 @@ echo $N_TRAIN_BOARDS
 echo $N_VAL_BOARDS
 echo $BLUE_ZERO_MODE_4_K
 echo $BOARD_SIZE
-conda run -n blue_zero bash ./scripts/fullpipeline.sh
+pushd scripts
+conda run -n blue_zero bash fullpipeline.sh
+popd
 exec "$@"
