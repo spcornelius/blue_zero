@@ -2,27 +2,7 @@ from dataclasses import dataclass
 from simple_parsing import choice, Serializable
 
 
-__all__ = ['NetParams', 'TrainParams', 'HyperParams']
-
-
-@dataclass
-class NetParams(Serializable):
-    """ parameters for deep Q network """
-
-    # number of convolutional layers in embedding
-    depth: int
-
-    # dimension of embedding
-    num_feat: int
-
-    # number of hidden neurons between embedding and outputs
-    num_hidden: int
-
-    # size of embedding convolution kernel
-    kernel_size: int
-
-    # include bias terms in convolutions
-    with_conv_bias: bool
+__all__ = ['HyperParams', 'TrainParams']
 
 
 @dataclass
@@ -82,14 +62,12 @@ class TrainParams(Serializable):
     # optimizer to use
     optimizer: str = choice('adam', 'sgd', 'rmsprop')
 
-    # method used to update target net from policy net
+    # method used to update target qnet from policy qnet
     target_update_mode: str = choice('hard', 'soft')
 
 
 @dataclass
 class HyperParams(Serializable):
-    """ Combined hyperparameters (network + training) representing a
-        single training run. """
-
-    net_params: NetParams
-    train_params: TrainParams
+    """ Parameters representing a complete training run """
+    qnet: dict
+    training: TrainParams

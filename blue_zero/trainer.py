@@ -11,7 +11,7 @@ from tqdm import tqdm
 from tqdm.std import Bar
 
 from blue_zero.agent import Agent
-from blue_zero.hyper import TrainParams
+from blue_zero.params import TrainParams
 from blue_zero.replay import NStepReplayMemory
 
 __all__ = []
@@ -152,18 +152,18 @@ class Trainer(object):
         """
         s_prev, a, s, dr, terminal = self.memory.sample(self.p.batch_size)
 
-        # get reward-to-go from state s from TARGET net
+        # get reward-to-go from state s from TARGET qnet
         _, q = self.target_agent.get_action(s, return_q=True)
 
         # terminal states by definition have zero reward-to-go
         q.masked_fill_(terminal, 0.0)
 
         # shouldn't be necessary as the optimizer only knows about the policy
-        # net's parameters, but make sure the target q values don't contribute
-        # to the gradient (target network is fixed in Double DQN)
+        # qnet's parameters, but make sure the target q values don't contribute
+        # to the gradient (target network is fixed in Double DuelingQNet)
         q = q.detach()
 
-        # get past q estimate using POLICY net
+        # get past q estimate using POLICY qnet
         q_prev = self.agent.net(s_prev, a=a)
 
         self.optimizer.zero_grad()
@@ -191,7 +191,7 @@ class Trainer(object):
             self.memory.store(e)
 
     def validate(self) -> np.float:
-        """ Validate current policy net.
+        """ Validate current policy qnet.
 
         Args:
             with_pbar: Whether or not to display a progress bar

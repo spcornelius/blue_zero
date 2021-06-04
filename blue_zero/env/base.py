@@ -101,5 +101,6 @@ class BlueBase(Env):
         self.r = 0.0
         self.steps_taken = 0
         self.state = self._state_orig.copy()
+        self._game_over = False
         self.update()
 

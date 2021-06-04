@@ -7,8 +7,8 @@ from simple_parsing import ArgumentParser, field
 
 import blue_zero.util as util
 from blue_zero.env.util import env_cls, ModeOptions
-from blue_zero.hyper import HyperParams
-from blue_zero.net.dqn import DQN
+from blue_zero.params import HyperParams
+from blue_zero.qnet.base import QNet
 from blue_zero.trainer import Trainer
 
 torch.backends.cudnn.benchmark = True
@@ -51,9 +51,10 @@ def main(config_file: Path, train_file: Path, validation_file: Path,
         util.set_seed(seed)
     train_set = load_envs(train_file, mode, **kwargs)
     validation_set = load_envs(validation_file, mode, **kwargs)
-    hp = HyperParams.load(config_file)
-    net = DQN(**vars(hp.net_params))
-    trainer = Trainer(net, train_set, validation_set, hp.train_params,
+    params = HyperParams.load(config_file)
+    qnet_type = params.qnet.pop('type')
+    net = QNet.create(qnet_type, **params.qnet)
+    trainer = Trainer(net, train_set, validation_set, params.training,
                       device=device)
     trained_net = trainer.train()
     trained_net.save(output_file)
