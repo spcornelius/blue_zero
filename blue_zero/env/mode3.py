@@ -31,11 +31,13 @@ class BlueMode3(BlueBase):
         top = set(clusters[0, :])
         bottom = set(clusters[-1, :])
         if self.direction == 'horizontal':
-            return left & right
+            sc =  left & right
         elif self.direction == 'vertical':
-            return top & bottom
+            sc = top & bottom
         elif self.direction == 'both':
-            return (left & right) | (top & bottom)
+            sc = (left & right) | (top & bottom)
+        sc.discard(0)
+        return sc
 
     def update(self):
         s = self.state
@@ -45,5 +47,5 @@ class BlueMode3(BlueBase):
         self.state[not_blocked] = Status.dead
         idx = np.isin(clusters, list(spanning_clusters))
         self.state[idx] = Status.alive
-        self._game_over = idx.sum() == 0
+        self._game_over = not spanning_clusters
         super().update()
