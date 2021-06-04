@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from time import sleep
 from typing import Union, List
 
 import numpy as np
@@ -83,7 +82,6 @@ class Agent(object):
     def play_envs(self, envs: List[BlueBase],
                   eps: float = 0.0,
                   pbar: Union[bool, tqdm] = False,
-                  pause: float = 0.,
                   device='cpu') -> None:
 
         envs = list(envs)
@@ -104,8 +102,6 @@ class Agent(object):
                 if done and pbar:
                     pbar.update(1)
                     pbar.refresh()
-
-            sleep(pause)
 
         if pbar and close_when_done:
             pbar.close()
