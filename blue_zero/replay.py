@@ -39,6 +39,8 @@ class NStepReplayMemory(object):
             e: A terminal environment.
         """
         assert e.done
+        if e.steps_taken == 0:
+            return
         for i in range(0, e.steps_taken):
             i_next = i + self.step_size
             a = torch.from_numpy(e.actions[i]).to(device=self.device)
