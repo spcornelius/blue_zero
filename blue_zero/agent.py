@@ -62,7 +62,6 @@ class Agent(object):
 
     def __init__(self, net: QNet):
         self.net = net
-        self.net.train()
 
     def get_action(self, s: torch.Tensor,
                    eps: float = 0.0,
