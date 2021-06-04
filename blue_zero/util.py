@@ -31,8 +31,8 @@ def to_bitboard(s: torch.Tensor):
         batched, otherwise (4, h, w) if unbatched, where h and w
         are the board height/width respectively. """
     dim = 0 if s.ndim == 2 else 1
-    return torch.stack([s == status for status in cfg.Status],
-                       dim=dim).float()
+    layers = [s.eq(status) for status in cfg.Status]
+    return torch.stack(layers, dim=dim).float()
 
 
 def set_seed(seed):
@@ -41,5 +41,6 @@ def set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
-    with pipes() as (out, err):
+
+    with pipes() as (_, _):
         torch.set_deterministic(True)
