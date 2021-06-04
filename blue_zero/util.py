@@ -12,12 +12,12 @@ __all__ = ['init_weights', 'to_bitboard', 'set_seed']
 def init_weights(module, w_scale):
     def _init_weights(m):
         try:
-            module.weight.data.uniform_(-w_scale, w_scale)
+            m.weight.data.uniform_(-w_scale, w_scale)
         except AttributeError:
             pass
 
         try:
-            module.bias.data.uniform_(-w_scale, w_scale)
+            m.bias.data.uniform_(-w_scale, w_scale)
         except AttributeError:
             pass
 
