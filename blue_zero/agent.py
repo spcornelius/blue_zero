@@ -6,9 +6,11 @@ from typing import Union, List
 
 import numpy as np
 import torch
-from gym import Env
 from torch.nn.functional import softmax
 from tqdm import tqdm
+
+from blue_zero.env import BlueBase
+from blue_zero.qnet import QNet
 
 __all__ = []
 __all__.extend([
@@ -58,7 +60,7 @@ def get_action_softmax(q, temp):
 
 class Agent(object):
 
-    def __init__(self, net: torch.nn.Module):
+    def __init__(self, net: QNet):
         self.net = net
         self.net.train()
 
@@ -78,7 +80,7 @@ class Agent(object):
 
         return (a, q) if return_q else a
 
-    def play_envs(self, envs: List[Env],
+    def play_envs(self, envs: List[BlueBase],
                   eps: float = 0.0,
                   pbar: Union[bool, tqdm] = False,
                   pause: float = 0.,
