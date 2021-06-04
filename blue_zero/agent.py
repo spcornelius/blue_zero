@@ -27,11 +27,10 @@ def get_action_greedy_eps(q, eps):
     batch_size, h, w = q.shape
 
     # which boards in the batch should receive a random action?
-    random = (torch.rand(len(q),
-                         device=q.device) < eps).view(-1, 1, 1).expand_as(q)
+    random = torch.rand_like(q).lt(eps).view(-1, 1, 1).expand_as(q)
 
     # remember: ineligible squares have q = -infinity
-    finite = ~torch.isinf(q)
+    finite = torch.isfinite(q)
 
     # replace scores of eligible actions on designated boards with randoms
     # = sneaky way of getting random actions without writing a separate
@@ -66,14 +65,14 @@ class Agent(object):
     def get_action(self, s: torch.Tensor,
                    eps: float = 0.0,
                    return_q: bool = False):
-        input_was_batched = s.ndim == 3
+        batched = s.ndim == 3
 
         with torch.no_grad():
             q = self.net(s)
 
         a, q = get_action_greedy_eps(q, eps)
 
-        if not input_was_batched:
+        if not batched:
             a = a[0]
             q = q.squeeze()
 
@@ -91,7 +90,7 @@ class Agent(object):
             pbar = tqdm(total=len(envs), desc="Playing")
             close_when_done = True
 
-        pbar.update(sum(1 for e in envs if e.done))
+        pbar.update(sum(e.done for e in envs))
         while unfinished_envs := [e for e in envs if not e.done]:
             # batch the states together
             batch = np.stack([e.state for e in unfinished_envs])
