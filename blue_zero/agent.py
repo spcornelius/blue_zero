@@ -29,7 +29,8 @@ def get_action_greedy_eps(q, eps):
     batch_size, h, w = q.shape
 
     # which boards in the batch should receive a random action?
-    random = torch.rand_like(q).lt(eps).view(-1, 1, 1).expand_as(q)
+    random = torch.rand(batch_size,
+                        device=q.device).lt(eps).view(-1, 1, 1).expand_as(q)
 
     # remember: ineligible squares have q = -infinity
     finite = torch.isfinite(q)
