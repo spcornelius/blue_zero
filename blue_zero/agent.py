@@ -1,6 +1,3 @@
-from __future__ import annotations
-
-from copy import deepcopy
 from typing import Union, List
 
 import numpy as np
@@ -66,6 +63,8 @@ class Agent(object):
     def get_action(self, s: torch.Tensor,
                    eps: float = 0.0,
                    return_q: bool = False):
+        self.net.eval()
+
         batched = s.ndim == 3
 
         with torch.no_grad():
@@ -79,48 +78,24 @@ class Agent(object):
 
         return (a, q) if return_q else a
 
-    def play_envs(self, envs: List[BlueBase],
-                  eps: float = 0.0,
-                  pbar: Union[bool, tqdm] = False,
-                  device='cpu') -> None:
-
+    def play(self, envs: List[BlueBase],
+             eps: float = 0.0,
+             pbar: Union[bool, tqdm] = False,
+             device='cpu') -> None:
         envs = list(envs)
-        close_when_done = False
+
+        disable = pbar is False
         if pbar is True:
             pbar = tqdm(total=len(envs), desc="Playing")
-            close_when_done = True
 
+        pbar.disable = disable
         pbar.update(sum(e.done for e in envs))
         while unfinished_envs := [e for e in envs if not e.done]:
             # batch the states together
             batch = np.stack([e.state for e in unfinished_envs])
             batch = torch.from_numpy(batch).to(device=device)
             actions = self.get_action(batch, eps=eps).cpu().numpy()
-            for i, (e, a) in enumerate(zip(unfinished_envs, actions)):
-                _, _, done, _ = e.step(a)
-
-                if done and pbar:
-                    pbar.update(1)
-                    pbar.refresh()
-
-        if pbar and close_when_done:
-            pbar.close()
-
-    def copy(self) -> Agent:
-        return self.__class__(deepcopy(self.net))
-
-    def update(self, other):
-        self.net.load_state_dict(other.net.state_dict())
-
-    def parameters(self):
-        return self.net.parameters()
-
-    def train(self) -> None:
-        self.net.train()
-
-    def eval(self) -> None:
-        self.net.eval()
-
-    def to(self, *args, **kwargs) -> Agent:
-        self.net.to(*args, **kwargs)
-        return self
+            for env, a in zip(unfinished_envs, actions):
+                _, _, done, _ = env.step(a)
+                pbar.update(done)
+                pbar.refresh()
