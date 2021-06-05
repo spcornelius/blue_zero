@@ -32,7 +32,7 @@ class DilationEmbeddingBlock(Module):
 
 
 @dataclass(eq=False)
-class DilationQNet(QNet, nickname='dilation'):
+class DilationQNet(QNet, id='dilation'):
     num_feat: int
     num_hidden: int
     depth: int

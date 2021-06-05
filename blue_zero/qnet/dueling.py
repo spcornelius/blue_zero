@@ -12,7 +12,7 @@ __all__ = ['DuelingQNet']
 
 
 @dataclass(eq=False)
-class DuelingQNet(QNet, nickname='dueling'):
+class DuelingQNet(QNet, id='dueling'):
     num_feat: int
     num_hidden: int
     depth: int

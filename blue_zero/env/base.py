@@ -9,8 +9,10 @@ from blue_zero.gui import BlueGUI
 
 __all__ = []
 __all__.extend([
-    'BlueBase'
+    'BlueEnv', 'mode_registry'
 ])
+
+mode_registry = {}
 
 
 class BlueEnv(Env):
@@ -58,6 +60,25 @@ class BlueEnv(Env):
 
         self.update()
 
+    # noinspection PyMethodOverriding
+    # noinspection PyShadowingBuiltins
+    def __init_subclass__(cls, id: str, **kwargs):
+        if id in mode_registry:
+            raise TypeError(
+                f"There is already a subclass of BlueEnv registered with"
+                f"id '{id}'.")
+        cls._id = id
+        mode_registry[id] = cls
+
+    # noinspection PyShadowingBuiltins
+    @staticmethod
+    def create(id: str, board: np.ndarray, **kwargs):
+        try:
+            return mode_registry[id](board, **kwargs)
+        except KeyError:
+            raise ValueError(
+                f"Can't find a subclass of BlueEnv with id '{id}'.")
+
     @classmethod
     def from_random(cls, size: tuple, p: float, **kwargs):
         if not (0 <= p <= 1):
@@ -72,6 +93,7 @@ class BlueEnv(Env):
     def sol_size(self):
         return int(np.abs(self.r) * self._reward_norm)
 
+    # noinspection PyUnusedLocal
     def reward(self, action) -> float:
         return -1.0 / self._reward_norm
 

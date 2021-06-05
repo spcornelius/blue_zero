@@ -12,7 +12,8 @@ from blue_zero.config import Status
 
 __all__ = ['QNet']
 
-# map qnet names ('dueling', etc.) to the appropriate subclass
+# map human-readable qnet identifiers ('dueling', etc.) to the appropriate
+# subclass
 _registry = {}
 
 
@@ -22,35 +23,32 @@ class QNet(Module, metaclass=abc.ABCMeta):
     def __post_init__(self):
         super().__init__()
 
+    # noinspection PyShadowingBuiltins
     @staticmethod
-    def create(type_: str, **kwargs):
+    def create(id: str, **kwargs):
         try:
-            return _registry[type_](**kwargs)
+            return _registry[id](**kwargs)
         except KeyError:
-            raise ValueError(f"Unrecognized Q network type '{type_}.")
+            raise ValueError(
+                f"Can't find a subclass of QNet with id '{id}'.")
 
-    def __init_subclass__(cls, **kwargs):
+    # noinspection PyMethodOverriding
+    # noinspection PyShadowingBuiltins
+    def __init_subclass__(cls, id: str, **kwargs):
         if not is_dataclass(cls):
             raise TypeError(
                 "Subclasses of QNet must be dataclasses.")
 
-        try:
-            nickname = kwargs['nickname']
-        except KeyError:
+        if id in _registry:
             raise TypeError(
-                f"Subclass {cls.__name__} of QNet is missing required class "
-                f"kwarg 'nickname'.")
-
-        if nickname in _registry:
-            raise TypeError(
-                f"nickname '{nickname}' of subclass {cls.__name__} of QNet "
-                f"conflicts with that of another.")
-        cls._nickname = nickname
-        _registry[nickname] = cls
+                f"There is already a subclass of QNet registered with"
+                f"name '{id}'.")
+        cls._id = id
+        _registry[id] = cls
 
     def save(self, file: Union[str, Path]):
         qnet_params = asdict(self)
-        qnet_params['type'] = self._nickname
+        qnet_params['id'] = self._id
         state = dict(state_dict={k: v.cpu() for k, v in
                                  self.state_dict().items()},
                      qnet_params=qnet_params)
@@ -60,8 +58,8 @@ class QNet(Module, metaclass=abc.ABCMeta):
     def load(file: Union[str, Path]):
         data = torch.load(file)
         qnet_params = data['qnet_params']
-        qnet_type = data.pop('type')
-        new_net = QNet.create(qnet_type, **qnet_params)
+        id_ = data.pop('id')
+        new_net = QNet.create(id_, **qnet_params)
         new_net.load_state_dict(data['state_dict'])
         return new_net
 

@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 from pathlib import Path
 from blue_zero.config import Status
-from blue_zero.env.util import env_cls
+from blue_zero.env import BlueEnv, mode_registry
 
 
 parser = argparse.ArgumentParser()
@@ -22,24 +22,25 @@ parser.add_argument('-o', dest='out_file', metavar='OUT_FILE',
                     type=Path, required=True,
                     help="where to save generated boards")
 parser.add_argument('--mode', dest='mode',
-                    type=int, required=True,
-                    help="game mode")
+                    type=str, required=True,
+                    help="game mode", choices=mode_registry.keys())
 parser.add_argument('--direction', type=str, default='horizontal',
                     choices=['horizontal', 'vertical', 'both'],
-                    help="current direction (ignored unless mode = 3)")
+                    help="current direction (ignored unless mode = 'three')")
 
 
-def gen_random(n: int, p_min: float, p_max: float, mode: int,
+def gen_random(n: int, p_min: float, p_max: float, mode: str,
                num_boards=1, **kwargs):
     boards = []
     while len(boards) < num_boards:
-        b = np.empty((n, n), dtype=np.int)
+        # use uint8 so the files are smaller
+        b = np.empty((n, n), dtype=np.uint8)
         b.fill(Status.wall)
         p = np.random.uniform(p_min, p_max)
         b[np.random.uniform(size=(n, n)) < p] = Status.alive
 
         # only retain states that aren't already terminal
-        env = env_cls[mode](b, **kwargs)
+        env = BlueEnv.create(mode, b, **kwargs)
         if env.done:
             continue
         boards.append(b)
@@ -62,9 +63,10 @@ def main():
     boards = gen_random(n, p_min, p_max, mode, num_boards=num_boards,
                         **args)
     if out_file.exists():
-        raise FileExistsError(f"Output file {args.out_file} already exists. "
+        raise FileExistsError(f"Output file {out_file} already exists. "
                               "Aborting.")
-    np.save(out_file, boards)
+    # np.save(out_file, boards)
+    np.savez_compressed(out_file, boards)
 
 
 if __name__ == "__main__":

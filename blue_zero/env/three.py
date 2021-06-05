@@ -10,7 +10,7 @@ __all__.extend([
 ])
 
 
-class BlueMode3(BlueEnv):
+class BlueMode3(BlueEnv, id='three'):
 
     def __init__(self, *args, direction: str = 'horizontal', **kwargs):
         direction = direction.lower()
@@ -31,7 +31,7 @@ class BlueMode3(BlueEnv):
         top = set(clusters[0, :])
         bottom = set(clusters[-1, :])
         if self.direction == 'horizontal':
-            sc =  left & right
+            sc = left & right
         elif self.direction == 'vertical':
             sc = top & bottom
         elif self.direction == 'both':

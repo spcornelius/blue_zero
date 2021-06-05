@@ -1,10 +1,14 @@
 qnet:
-  type: 'dueling'
+  id: 'dueling'
   depth: 5
   kernel_size: 3
   num_feat: 64
   num_hidden: 128
   bias: false
+mode:
+  id: 'zero'
+  # blank = no normalization of rewards
+  reward_norm:
 training:
   batch_size: 64
   eps_decay_time: 10000
