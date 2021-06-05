@@ -34,7 +34,7 @@ def main(file: Path, n: int, p: float, mode: int,
          pause: float = 0.2, **kwargs):
     net = QNet.load(file)
     agent = Agent(net)
-    env = env_cls[mode].from_random((n, n), p, with_gui=True, **kwargs)
+    env = env_cls[mode].from_random((n, n), p, show_gui=True, **kwargs)
 
     started = False
     print("Click anywhere to start playing.")

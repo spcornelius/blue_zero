@@ -16,7 +16,7 @@ __all__.extend([
 class BlueBase(Env):
 
     def __init__(self, state: '2D array_like',
-                 with_gui: bool = False,
+                 show_gui: bool = False,
                  screen_size: Tuple[int, int] = cfg.screen_size,
                  **kwargs):
         super().__init__()
@@ -27,7 +27,7 @@ class BlueBase(Env):
         self.state = state
         self._r_norm = np.sqrt(np.prod(self.state.shape))
 
-        self.with_gui = with_gui
+        self.show_gui = show_gui
 
         self.states = []
         self.actions = []
@@ -39,7 +39,7 @@ class BlueBase(Env):
         self._state_orig = self.state.copy()
         self._game_over = False
 
-        if self.with_gui:
+        if self.show_gui:
             self.gui = BlueGUI(self.state.shape,
                                screen_size=screen_size)
 
@@ -69,7 +69,7 @@ class BlueBase(Env):
                                          s == Status.dead))
 
     def update(self) -> None:
-        if self.with_gui:
+        if self.show_gui:
             self.render()
 
     def render(self, mode='human'):
