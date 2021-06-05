@@ -5,7 +5,7 @@ from typing import Union, List
 import numpy as np
 import torch
 from torch.nn import Module
-from path import Path
+from pathlib import Path
 
 import blue_zero.util as util
 from blue_zero.config import Status

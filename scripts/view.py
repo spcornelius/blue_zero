@@ -3,7 +3,7 @@ from dataclasses import dataclass, asdict
 from time import sleep
 
 import pygame
-from path import Path
+from pathlib import Path
 from simple_parsing import ArgumentParser, field
 
 from blue_zero.agent import Agent

@@ -2,7 +2,7 @@ from dataclasses import dataclass, asdict
 
 import numpy as np
 import torch
-from path import Path
+from pathlib import Path
 from simple_parsing import ArgumentParser, field
 
 import blue_zero.util as util

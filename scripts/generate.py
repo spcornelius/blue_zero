@@ -1,6 +1,6 @@
 import argparse
 import numpy as np
-from path import Path
+from pathlib import Path
 from blue_zero.config import Status
 from blue_zero.env.util import env_cls
 
