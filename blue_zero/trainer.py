@@ -75,8 +75,12 @@ class Trainer(object):
         self.train_pbar = tqdm(total=p.max_epochs, position=0,
                                desc="Training", unit=" epochs",
                                leave=False)
-        self.log_pbar = tqdm(position=2, total=0,
-                             bar_format='{desc}')
+        self.status_pbar = tqdm(position=2, total=0,
+                                bar_format=f"{BOLD}Loss: {{postfix[0]:1.2e}}"
+                                           f"  |  "
+                                           f"Avg. moves to win: "
+                                           f"{{postfix[1]:.2f}}{END}",
+                                postfix=[np.nan, np.nan])
         self.play_pbar = tqdm(total=p.num_play, position=1,
                               desc="    Playing", unit=" games",
                               bar_format=pbar_format)
@@ -84,7 +88,7 @@ class Trainer(object):
                                   desc="    Validating", unit=" games",
                                   bar_format=pbar_format, leave=False)
         self.train_pbar.clear()
-        self.log_pbar.clear()
+        self.status_pbar.clear()
         self.play_pbar.clear()
         self.validate_pbar.clear()
 
@@ -111,10 +115,9 @@ class Trainer(object):
 
             if self.epoch % p.validation_freq == 0:
                 perf = self.validate()
-                self.log_pbar.set_description_str(
-                    f"{BOLD}Loss: {loss:1.2e}  |  "
-                    f"Avg. moves to win: {perf:.2f}{END}"
-                )
+                self.status_pbar.postfix[0] = loss
+                self.status_pbar.postfix[1] = perf
+                self.status_pbar.refresh()
 
             # do one fit iteration
             loss = self.fit()
