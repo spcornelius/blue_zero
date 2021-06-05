@@ -8,7 +8,7 @@ from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 
 from blue_zero.agent import Agent
-from blue_zero.env import BlueBase
+from blue_zero.env import BlueEnv
 from blue_zero.params import TrainParams
 from blue_zero.qnet import QNet
 from blue_zero.replay import NStepReplayMemory
@@ -37,8 +37,8 @@ class Trainer(object):
         with a linear decay in epsilon. """
 
     def __init__(self, net: QNet,
-                 train_set: Iterable[BlueBase],
-                 validation_set: Iterable[BlueBase],
+                 train_set: Iterable[BlueEnv],
+                 validation_set: Iterable[BlueEnv],
                  p: TrainParams,
                  device='cpu'):
 

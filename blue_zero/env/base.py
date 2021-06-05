@@ -13,7 +13,7 @@ __all__.extend([
 ])
 
 
-class BlueBase(Env):
+class BlueEnv(Env):
 
     def __init__(self, state: '2D array_like',
                  show_gui: bool = False,

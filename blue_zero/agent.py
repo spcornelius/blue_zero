@@ -5,7 +5,7 @@ import torch
 from torch.nn.functional import softmax
 from tqdm import tqdm
 
-from blue_zero.env import BlueBase
+from blue_zero.env import BlueEnv
 from blue_zero.qnet import QNet
 
 __all__ = []
@@ -78,7 +78,7 @@ class Agent(object):
 
         return (a, q) if return_q else a
 
-    def play(self, envs: Iterable[BlueBase],
+    def play(self, envs: Iterable[BlueEnv],
              eps: float = 0.0,
              pbar: Union[bool, tqdm] = False,
              device='cpu') -> None:

@@ -2,7 +2,7 @@ import numpy as np
 
 from blue_zero.clusters import find_clusters
 from blue_zero.config import Status
-from blue_zero.env.base import BlueBase
+from blue_zero.env.base import BlueEnv
 
 __all__ = []
 __all__.extend([
@@ -10,7 +10,7 @@ __all__.extend([
 ])
 
 
-class BlueMode0(BlueBase):
+class BlueMode0(BlueEnv):
 
     def __init__(self, *args, **kwargs):
         self.max_non_lcc_size = 0

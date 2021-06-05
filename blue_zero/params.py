@@ -70,4 +70,5 @@ class TrainParams(Serializable):
 class HyperParams(Serializable):
     """ Parameters representing a complete training run """
     qnet: dict
+    mode: dict
     training: TrainParams
