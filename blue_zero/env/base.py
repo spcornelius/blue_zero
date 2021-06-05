@@ -29,17 +29,16 @@ class BlueBase(Env):
 
         h, w = self.state.shape
         if reward_norm is None:
-            self._norm_factor = 1
+            self._reward_norm = 1.0
         elif reward_norm == 'board_size':
-            self._norm_factor = h * w
+            self._reward_norm = h * w
         elif reward_norm == 'side_length':
-            self._reward_factor = max(h, w)
+            self._reward_norm = max(h, w)
         elif isinstance(reward_norm, float):
             self._reward_norm = reward_norm
         else:
             raise ValueError(
                 f"Unrecognized reward normalization strategy: {reward_norm}")
-        self._r_norm = np.sqrt(np.prod(self.state.shape))
 
         self.show_gui = show_gui
 
@@ -71,10 +70,10 @@ class BlueBase(Env):
 
     @property
     def sol_size(self):
-        return int(np.abs(self.r) * self._r_norm)
+        return int(np.abs(self.r) * self._reward_norm)
 
     def reward(self, action) -> float:
-        return -1.0 / self._norm_factor
+        return -1.0 / self._reward_norm
 
     @property
     def action_space(self) -> np.ndarray:
