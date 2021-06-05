@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 import contextlib
@@ -35,7 +35,7 @@ class BlueGUI(object):
         self.pad_h = cfg.pad_frac * screen_h / (self.board_h + 1)
         self.rects = dict()
 
-    def draw_board(self, state: Tensor) -> None:
+    def draw_board(self, state: Union[Tensor, np.ndarray]) -> None:
         board_h, board_w = state.shape
         assert board_h == self.board_h
         assert board_w == self.board_w

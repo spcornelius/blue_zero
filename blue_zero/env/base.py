@@ -72,7 +72,7 @@ class BlueBase(Env):
         if self.with_gui:
             self.render()
 
-    def render(self):
+    def render(self, mode='human'):
         self.gui.draw_board(self.state)
 
     def step(self, ij) -> Tuple[np.ndarray, float, bool, None]:
@@ -103,4 +103,3 @@ class BlueBase(Env):
         self.state = self._state_orig.copy()
         self._game_over = False
         self.update()
-

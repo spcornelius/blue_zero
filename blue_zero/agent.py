@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, Iterable
 
 import numpy as np
 import torch
@@ -78,7 +78,7 @@ class Agent(object):
 
         return (a, q) if return_q else a
 
-    def play(self, envs: List[BlueBase],
+    def play(self, envs: Iterable[BlueBase],
              eps: float = 0.0,
              pbar: Union[bool, tqdm] = False,
              device='cpu') -> None:

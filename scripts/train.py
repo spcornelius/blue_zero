@@ -69,4 +69,3 @@ if __name__ == "__main__":
     kwargs = asdict(args.options)
     kwargs.update(args.mode_options.get_kwargs(args.options.mode))
     main(**kwargs)
-

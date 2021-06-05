@@ -4,12 +4,11 @@ from typing import Iterable
 import numpy as np
 import torch
 import torch.optim as optim
-from gym import Env
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
-from tqdm.std import Bar
 
 from blue_zero.agent import Agent
+from blue_zero.env import BlueBase
 from blue_zero.params import TrainParams
 from blue_zero.qnet import QNet
 from blue_zero.replay import NStepReplayMemory
@@ -24,7 +23,7 @@ END = '\033[0m'
 
 l_bar = '{desc}: {percentage:3.0f}%|'
 r_bar = '| {n_fmt}/{total_fmt} [{rate_fmt}{postfix}]'
-format = f"{l_bar}{{bar}}{r_bar}"
+pbar_format = f"{l_bar}{{bar}}{r_bar}"
 
 optimizers = {'adam': optim.Adam,
               'adamw': optim.AdamW,
@@ -38,8 +37,8 @@ class Trainer(object):
         with a linear decay in epsilon. """
 
     def __init__(self, net: QNet,
-                 train_set: Iterable[Env],
-                 validation_set: Iterable[Env],
+                 train_set: Iterable[BlueBase],
+                 validation_set: Iterable[BlueBase],
                  p: TrainParams,
                  device='cpu'):
 
@@ -80,22 +79,22 @@ class Trainer(object):
                              bar_format='{desc}')
         self.play_pbar = tqdm(total=p.num_play, position=1,
                               desc="    Playing", unit=" games",
-                              bar_format=format)
+                              bar_format=pbar_format)
         self.validate_pbar = tqdm(total=len(self.validation_set), position=1,
                                   desc="    Validating", unit=" games",
-                                  bar_format=format, leave=False)
+                                  bar_format=pbar_format, leave=False)
         self.train_pbar.clear()
         self.log_pbar.clear()
         self.play_pbar.clear()
         self.validate_pbar.clear()
 
     @property
-    def eps(self):
+    def eps(self) -> float:
         """ Current value of epsilon (random action probability). """
         e1, e2, t = self.p.eps_start, self.p.eps_end, self.p.eps_decay_time
         return e2 + max(0.0, (e1 - e2) * (t - self.epoch) / t)
 
-    def train(self):
+    def train(self) -> QNet:
         p = self.p
 
         print()
@@ -148,7 +147,7 @@ class Trainer(object):
     def burn_in(self):
         pbar = tqdm(total=self.p.num_burn_in, position=0,
                     desc="Burning in", unit=" games",
-                    bar_format=format, leave=False)
+                    bar_format=pbar_format, leave=False)
         self.play_games(self.p.num_burn_in, pbar=pbar)
         pbar.close()
 
@@ -185,7 +184,7 @@ class Trainer(object):
 
         return loss.detach()
 
-    def play_games(self, n: int, pbar: Bar = None):
+    def play_games(self, n: int, pbar: tqdm = None) -> None:
         """ Play through n complete environments drawn from the training
             set using an epsilon-greedy strategy, then
             store completed envs in replay _memory. """
@@ -200,7 +199,7 @@ class Trainer(object):
             assert e.done
             self.memory.store(e)
 
-    def validate(self) -> np.float:
+    def validate(self):
         """ Validate current policy net.
 
         Returns:
