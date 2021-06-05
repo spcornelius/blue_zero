@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 from gym import Env
@@ -18,6 +18,7 @@ class BlueBase(Env):
     def __init__(self, state: '2D array_like',
                  show_gui: bool = False,
                  screen_size: Tuple[int, int] = cfg.screen_size,
+                 reward_norm: Union[str, float] = None,
                  **kwargs):
         super().__init__()
 
@@ -25,6 +26,19 @@ class BlueBase(Env):
         assert state.ndim == 2
         assert np.isin(state, Status).all()
         self.state = state
+
+        h, w = self.state.shape
+        if reward_norm is None:
+            self._norm_factor = 1
+        elif reward_norm == 'board_size':
+            self._norm_factor = h * w
+        elif reward_norm == 'side_length':
+            self._reward_factor = max(h, w)
+        elif isinstance(reward_norm, float):
+            self._reward_norm = reward_norm
+        else:
+            raise ValueError(
+                f"Unrecognized reward normalization strategy: {reward_norm}")
         self._r_norm = np.sqrt(np.prod(self.state.shape))
 
         self.show_gui = show_gui
@@ -60,7 +74,7 @@ class BlueBase(Env):
         return int(np.abs(self.r) * self._r_norm)
 
     def reward(self, action) -> float:
-        return -1.0 / self._r_norm
+        return -1.0 / self._norm_factor
 
     @property
     def action_space(self) -> np.ndarray:
