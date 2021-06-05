@@ -60,7 +60,7 @@ class TrainParams(Serializable):
     validation_freq: int
 
     # optimizer to use
-    optimizer: str = choice('adam', 'sgd', 'rmsprop')
+    optimizer: str = choice('adam', 'adamw', 'sgd', 'rmsprop')
 
     # method used to update target qnet from policy qnet
     target_update_mode: str = choice('hard', 'soft')
