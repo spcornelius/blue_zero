@@ -34,16 +34,16 @@ def gen_random(n: int, p_min: float, p_max: float, mode: str,
     boards = []
     while len(boards) < num_boards:
         # use uint8 so the files are smaller
-        b = np.empty((n, n), dtype=np.uint8)
-        b.fill(Status.wall)
+        board = np.empty((n, n), dtype=np.uint8)
+        board.fill(Status.wall)
         p = np.random.uniform(p_min, p_max)
-        b[np.random.uniform(size=(n, n)) < p] = Status.alive
+        board[np.random.uniform(size=(n, n)) < p] = Status.alive
 
         # only retain states that aren't already terminal
-        env = BlueEnv.create(mode, b, **kwargs)
+        env = BlueEnv.create(mode, board, **kwargs)
         if env.done:
             continue
-        boards.append(b)
+        boards.append(board)
 
     return np.stack(boards)
 
