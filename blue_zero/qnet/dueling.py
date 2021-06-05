@@ -3,7 +3,7 @@ from functools import partial
 from typing import Union, Tuple
 
 import torch
-from torch.nn import Conv2d, LeakyReLU, Sequential
+from torch.nn import Conv2d, ReLU, Sequential
 
 from blue_zero.config import Status
 from blue_zero.qnet.base import QNet
@@ -42,21 +42,22 @@ class DuelingQNet(QNet, nickname='dueling'):
         FCConv = partial(Conv2d, kernel_size=(1, 1), bias=True)
 
         # initial convolution (1 channel input --> num_feat channel output)
-        layers = [EmbedConv(4, self.num_feat), LeakyReLU()]
+        layers = [EmbedConv(4, self.num_feat), ReLU()]
 
         # subsequent convolutions (always with num_feat channels)
         for _ in range(self.depth - 1):
-            layers.extend([EmbedConv(self.num_feat, self.num_feat), LeakyReLU()])
+            layers.extend([EmbedConv(self.num_feat, self.num_feat),
+                           ReLU()])
 
         self.embed = Sequential(*layers)
 
         self.value = Sequential(FCConv(3 * self.num_feat, self.num_hidden),
-                                LeakyReLU(),
+                                ReLU(),
                                 FCConv(self.num_hidden, 1)
                                 )
 
         self.advantage = Sequential(FCConv(4 * self.num_feat, self.num_hidden),
-                                    LeakyReLU(),
+                                    ReLU(),
                                     FCConv(self.num_hidden, 1)
                                     )
 
