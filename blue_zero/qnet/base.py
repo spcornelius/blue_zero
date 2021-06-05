@@ -90,9 +90,6 @@ class QNet(Module, metaclass=abc.ABCMeta):
 
         # only want to calculate the average advantage over *valid* actions
         # zero out that of ineligible moves
-        #invalid = (s[:, Status.wall, :, :].byte() |
-        #           s[:, Status.attacked, :, :].byte()).bool()
-
         q = self.q(s).view(batch_size, h, w)
         invalid = self.invalid_mask(s)
         q.masked_fill_(invalid, float("-inf"))
