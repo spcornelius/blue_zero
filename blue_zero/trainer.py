@@ -196,7 +196,7 @@ class Trainer(object):
         for e in envs:
             e.reset()
 
-        self.agent.play(envs, pbar=pbar, device=self.device)
+        self.agent.play(envs, eps=self.eps, pbar=pbar, device=self.device)
 
         for e in envs:
             assert e.done
