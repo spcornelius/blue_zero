@@ -94,10 +94,11 @@ class DuelingQNet(QNet, id='dueling'):
         # invalid = (s[:, Status.wall, :, :].byte() |
         #           s[:, Status.attacked, :, :].byte()).bool()
         invalid = self.invalid_mask(s)
-        adv.masked_fill_(invalid, 0.0)
-        num_valid = (~invalid).sum(dim=(1, 2), keepdim=True)
-        adv_mean = adv.sum(dim=(1, 2), keepdim=True) / num_valid
+        adv.masked_fill_(invalid, float("-inf"))
+        # num_valid = (~invalid).sum(dim=(1, 2), keepdim=True)
+        # adv_mean = adv.sum(dim=(1, 2), keepdim=True) / num_valid
 
         # finally, get q values for each square
         # q will have shape (batch_size, h, w)
-        return val + adv - adv_mean.expand_as(adv)
+        # return val + adv - adv_mean.expand_as(adv)
+        return val + adv - adv.amax(dim=(1, 2), keepdim=True)
