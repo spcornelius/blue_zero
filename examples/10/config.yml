@@ -5,6 +5,8 @@ qnet:
   num_feat: 32
   num_hidden: 64
   bias: true
+  batchnorm: true
+  bn_momentum: 0.1
 mode:
   id: 'zero'
   # blank = no normalization of rewards
