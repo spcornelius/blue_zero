@@ -161,7 +161,8 @@ class Trainer(object):
         self.policy_net.train()
         self.target_net.eval()
 
-        s_prev, a_prev, s, dr, terminal = self.memory.sample(self.p.batch_size)
+        s_prev, a_prev, s, dr, terminal, dt = \
+            self.memory.sample(self.p.batch_size)
 
         # get reward-to-go of next state according to target net
         # (but choosing the corresponding optimal action using the policy net)
@@ -177,7 +178,7 @@ class Trainer(object):
 
         # update weights
         self.optimizer.zero_grad()
-        loss = self.loss_func(q_prev, dr + self.p.gamma * q)
+        loss = self.loss_func(q_prev, dr + self.p.gamma ** dt * q)
         loss.backward()
         clip_grad_norm_(self.policy_net.parameters(), self.p.max_grad_norm)
         self.optimizer.step()
