@@ -12,9 +12,6 @@ class TrainParams(Serializable):
     # learning rate
     lr: float
 
-    # number of replay transitions to fit during each optimization step
-    batch_size: int
-
     # maximum number of training iterations to perform
     max_epochs: int
 
@@ -41,9 +38,6 @@ class TrainParams(Serializable):
     # (ignored unless target_update_mode = soft)
     soft_update_rate: float
 
-    # size of replay buffer
-    mem_size: int
-
     # number of complete environments to play through/store before training
     num_burn_in: int
 
@@ -52,9 +46,6 @@ class TrainParams(Serializable):
 
     # clip gradient norms to no more than this value
     max_grad_norm: float
-
-    # the "N" in "N-Step" replay memory
-    step_diff: int
 
     # play through validation data every this many epochs
     validation_freq: int
@@ -71,4 +62,5 @@ class HyperParams(Serializable):
     """ Parameters representing a complete training run """
     qnet: dict
     mode: dict
+    replay: dict
     training: TrainParams

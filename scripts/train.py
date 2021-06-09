@@ -10,6 +10,7 @@ from blue_zero.env import BlueEnv
 from blue_zero.params import HyperParams
 from blue_zero.qnet.base import QNet
 from blue_zero.trainer import Trainer
+from blue_zero.replay import NStepReplayMemory
 
 torch.backends.cudnn.benchmark = True
 
@@ -52,8 +53,9 @@ def main(config_file: Path, train_file: Path, validation_file: Path,
     validation_set = load_envs(validation_file, **params.mode)
 
     net = QNet.create(**params.qnet)
-    trainer = Trainer(net, train_set, validation_set, params.training,
-                      device=device)
+    memory = NStepReplayMemory(**params.replay)
+    trainer = Trainer(net, train_set, validation_set, memory,
+                      params.training, device=device)
     trained_net = trainer.train()
     trained_net.save(output_file)
 

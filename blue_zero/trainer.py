@@ -39,6 +39,7 @@ class Trainer(object):
     def __init__(self, net: QNet,
                  train_set: Iterable[BlueEnv],
                  validation_set: Iterable[BlueEnv],
+                 memory: NStepReplayMemory,
                  p: TrainParams,
                  device='cpu'):
 
@@ -56,7 +57,7 @@ class Trainer(object):
         self.train_set = list(train_set)
         self.validation_set = list(validation_set)
 
-        self.memory = NStepReplayMemory(p.mem_size, p.step_diff, device=device)
+        self.memory = memory
 
         weights = self.policy_net.parameters()
         try:
@@ -162,7 +163,7 @@ class Trainer(object):
         self.target_net.eval()
 
         s_prev, a_prev, s, dr, terminal, dt = \
-            self.memory.sample(self.p.batch_size)
+            self.memory.sample(device=self.device)
 
         # get reward-to-go of next state according to target net
         # (but choosing the corresponding optimal action using the policy net)
