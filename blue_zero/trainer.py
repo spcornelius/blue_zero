@@ -161,22 +161,19 @@ class Trainer(object):
         self.policy_net.train()
         self.target_net.eval()
 
-        s_prev, a, s, dr, terminal = self.memory.sample(self.p.batch_size)
+        s_prev, a_prev, s, dr, terminal = self.memory.sample(self.p.batch_size)
 
-        # get reward-to-go from state s from TARGET net
+        # get reward-to-go of next state according to target net
+        # (but choosing the corresponding optimal action using the policy net)
         with torch.no_grad():
-            q = self.target_net(s).view(self.p.batch_size, -1).amax(1)
+            a = self.agent.get_action(s, eps=0)
+            q = self.target_net(s, a=a).detach()
 
         # terminal states by definition have zero reward-to-go
         q[terminal] = 0.0
 
-        # shouldn't be necessary as the optimizer only knows about the policy
-        # net's parameters, but make sure the target q values don't contribute
-        # to the gradient (target network is fixed in Dueling DQN)
-        q = q.detach()
-
         # get q estimate using POLICY net
-        q_prev = self.policy_net(s_prev, a=a)
+        q_prev = self.policy_net(s_prev, a=a_prev)
 
         # update weights
         self.optimizer.zero_grad()
