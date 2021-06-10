@@ -120,6 +120,7 @@ class BlueEnv(Env):
 
         # get reward and update state
         dr = self.reward(ij)
+        assert self.state[i, j] == Status.alive
         self.state[i, j] = Status.attacked
 
         # recompute clusters and check termination
