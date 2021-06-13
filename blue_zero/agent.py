@@ -3,6 +3,7 @@ from typing import Union, Iterable
 import numpy as np
 import torch
 from torch.nn.functional import softmax
+from more_itertools import chunked
 from tqdm import tqdm
 
 from blue_zero.env import BlueEnv
@@ -80,9 +81,12 @@ class Agent(object):
 
     def play(self, envs: Iterable[BlueEnv],
              eps: float = 0.0,
-             pbar: Union[bool, tqdm] = False,
-             device='cpu') -> None:
+             batch_size: int = None,
+             pbar: Union[bool, tqdm] = False) -> None:
+
         envs = list(envs)
+        if batch_size is None:
+            batch_size = len(envs)
 
         disable = pbar is False
         if pbar is True:
@@ -90,12 +94,14 @@ class Agent(object):
 
         pbar.disable = disable
         pbar.update(sum(e.done for e in envs))
-        while unfinished_envs := [e for e in envs if not e.done]:
-            # batch the states together
-            batch = np.stack([e.state for e in unfinished_envs])
-            batch = torch.from_numpy(batch).to(device=device)
-            actions = self.get_action(batch, eps=eps).cpu().numpy()
-            for env, a in zip(unfinished_envs, actions):
-                _, _, done, _ = env.step(a)
-                pbar.update(done)
-                pbar.refresh()
+
+        for env_batch in chunked(envs, batch_size):
+            while unfinished_envs := [e for e in env_batch if not e.done]:
+                # batch the states together
+                batch = np.stack([e.state for e in unfinished_envs])
+                batch = torch.from_numpy(batch).to(device=self.net.device)
+                actions = self.get_action(batch, eps=eps).cpu().numpy()
+                for env, a in zip(unfinished_envs, actions):
+                    _, _, done, _ = env.step(a)
+                    pbar.update(done)
+                    pbar.refresh()

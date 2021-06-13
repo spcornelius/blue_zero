@@ -4,7 +4,7 @@ from typing import Union, List
 
 import numpy as np
 import torch
-from torch.nn import Module
+from torch.nn import Module, Parameter
 from pathlib import Path
 
 import blue_zero.util as util
@@ -22,6 +22,7 @@ class QNet(Module, metaclass=abc.ABCMeta):
 
     def __post_init__(self):
         super().__init__()
+        self.dummy_param = Parameter(torch.empty(0))
 
     # noinspection PyShadowingBuiltins
     @staticmethod
@@ -102,3 +103,7 @@ class QNet(Module, metaclass=abc.ABCMeta):
                 i, j = a.t()
                 batch_idx = torch.arange(0, batch_size, device=a.device)
                 return q[batch_idx, i, j]
+
+    @property
+    def device(self):
+        return self.dummy_param.device
