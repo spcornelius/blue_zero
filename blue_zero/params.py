@@ -9,9 +9,6 @@ __all__ = ['HyperParams', 'TrainParams']
 class TrainParams(Serializable):
     """ parameters for double-Q learning with N-step replay memory """
 
-    # learning rate
-    lr: float
-
     # maximum number of training iterations to perform
     max_epochs: int
 
@@ -44,14 +41,17 @@ class TrainParams(Serializable):
     # discount factor for future rewards
     gamma: float
 
-    # clip gradient norms to no more than this value
-    max_grad_norm: float
+    # clip gradient values to no more than this in magnitude
+    max_grad: float
 
     # play through validation data every this many epochs
     validation_freq: int
 
-    # optimizer to use
-    optimizer: str = choice('adam', 'adamw', 'sgd', 'rmsprop')
+    # name of optimizer to use and optional kwargs
+    optimizer: dict
+
+    # whether to use gradient value clipping
+    clip_gradients: bool = True
 
     # method used to update target qnet from policy qnet
     target_update_mode: str = choice('hard', 'soft')

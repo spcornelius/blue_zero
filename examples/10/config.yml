@@ -12,22 +12,24 @@ mode:
   # blank = no normalization of rewards
   reward_norm:
 replay:
-  capacity: 500_000
+  capacity: 1_000_000
   batch_size: 512
   step_diff: 1
 training:
-  eps_decay_time: 50000
+  max_epochs: 200_000
+  eps_decay_time: 100_000
   eps_start: 1.0
-  eps_end: 0.05
+  eps_end: 0.001
   gamma: 1.0
-  lr: 1.0e-4
-  max_epochs: 100000
-  max_grad_norm: 1.0
-  num_burn_in: 100
-  num_play: 100
+  clip_gradients: true
+  max_grad: 1.0
+  num_burn_in: 20_000
   play_freq: 100
-  optimizer: adamw
+  num_play: 100
   validation_freq: 100
   target_update_mode: soft
   soft_update_rate: 1.0e-5
-  hard_update_freq: 1000
+  hard_update_freq: 10000
+  optimizer:
+    name: 'adam'
+    lr: 5.0e-5

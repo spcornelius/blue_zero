@@ -4,7 +4,7 @@ from typing import Iterable
 import numpy as np
 import torch
 import torch.optim as optim
-from torch.nn.utils import clip_grad_norm_
+from torch.nn.utils import clip_grad_norm_, clip_grad_value_
 from tqdm import tqdm
 
 from blue_zero.agent import Agent
@@ -12,6 +12,8 @@ from blue_zero.env import BlueEnv
 from blue_zero.params import TrainParams
 from blue_zero.qnet import QNet
 from blue_zero.replay import NStepReplayMemory
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+import blue_zero.util as util
 
 __all__ = []
 __all__.extend([
@@ -60,10 +62,13 @@ class Trainer(object):
         self.memory = memory
 
         weights = self.policy_net.parameters()
+        opt_kwargs = p.optimizer
+        opt_name = opt_kwargs.pop('name').lower()
         try:
-            self.optimizer = optimizers[p.optimizer.lower()](weights, lr=p.lr)
+            Opt = optimizers[opt_name]
         except KeyError:
-            raise ValueError(f"Unrecognized optimizer '{p.optimizer}'.")
+            raise ValueError(f"Unrecognized optimizer '{opt_name}'.")
+        self.optimizer = Opt(weights, **opt_kwargs)
         self.loss_func = torch.nn.MSELoss()
 
         self.epoch = 0
@@ -111,7 +116,7 @@ class Trainer(object):
         while self.epoch < p.max_epochs:
             if self.epoch % p.play_freq == 0:
                 self.play_pbar.reset()
-                self.play_games(p.num_play, pbar=self.play_pbar)
+                self.play_games()
                 self.play_pbar.clear()
 
             if self.epoch % p.validation_freq == 0:
@@ -122,7 +127,6 @@ class Trainer(object):
 
             # do one fit iteration
             loss = self.fit()
-            self.epoch += 1
             self.train_pbar.update(1)
             self.train_pbar.refresh()
 
@@ -134,6 +138,8 @@ class Trainer(object):
                     self.epoch % p.hard_update_freq == 0:
                 self._hard_update_target()
 
+            self.epoch += 1
+
         return self.agent.net
 
     def _soft_update_target(self) -> None:
@@ -142,18 +148,10 @@ class Trainer(object):
         for p, p_target in zip(self.policy_net.parameters(),
                                self.target_net.parameters()):
             p_target.data.copy_(tau * p.data + (1 - tau) * p_target.data)
-        self.target_net.eval()
 
     def _hard_update_target(self) -> None:
-        self.target_net.load_state_dict(self.policy_net.state_dict())
-        self.target_net.eval()
-
-    def burn_in(self):
-        pbar = tqdm(total=self.p.num_burn_in, position=0,
-                    desc="Burning in", unit=" games",
-                    bar_format=pbar_format, leave=False)
-        self.play_games(self.p.num_burn_in, pbar=pbar)
-        pbar.close()
+        state_dict = deepcopy(self.policy_net.state_dict())
+        self.target_net.load_state_dict(state_dict)
 
     def fit(self) -> float:
         """ Perform one optimization step, sampling a batch of transitions
@@ -162,44 +160,74 @@ class Trainer(object):
         self.policy_net.train()
         self.target_net.eval()
 
-        s_prev, a_prev, s, dr, terminal, dt = \
-            self.memory.sample(device=self.device)
+        s_prev, a, s, dr, terminal, dt = self.memory.sample(device=self.device)
 
         # get reward-to-go of next state according to target net
         # (but choosing the corresponding optimal action using the policy net)
         with torch.no_grad():
-            a = self.agent.get_action(s, eps=0)
-            q = self.target_net(s, a=a).detach()
+            self.policy_net.eval()
+            a_next = self.agent.get_action(s, eps=0)
+            self.policy_net.train()
+            q = self.target_net(s, a=a_next).detach()
 
         # terminal states by definition have zero reward-to-go
         q[terminal] = 0.0
 
         # get q estimate using POLICY net
-        q_prev = self.policy_net(s_prev, a=a_prev)
+        q_prev = self.policy_net(s_prev, a=a)
 
         # update weights
         self.optimizer.zero_grad()
         loss = self.loss_func(q_prev, dr + self.p.gamma ** dt * q)
         loss.backward()
-        clip_grad_norm_(self.policy_net.parameters(), self.p.max_grad_norm)
+        if self.p.clip_gradients:
+            clip_grad_norm_(self.policy_net.parameters(), self.p.max_grad)
         self.optimizer.step()
 
         return loss.detach()
 
-    def play_games(self, n: int, pbar: tqdm = None) -> None:
-        """ Play through n complete environments drawn from the training
-            set using an epsilon-greedy strategy, then
-            store completed envs in replay _memory. """
-        envs = np.random.choice(self.train_set, n, replace=False)
+    def play(self,
+             envs: Iterable[BlueEnv],
+             eps: float = None,
+             pbar: tqdm = None,
+             rotate: bool = True,
+             memorize: bool = False):
 
+        if eps is None:
+            eps = self.eps
+
+        pbar.reset()
         for e in envs:
             e.reset()
+            if rotate:
+                k = np.random.randint(0, 4)
+                e.state = np.ascontiguousarray(np.rot90(e.state, k=k))
 
-        self.agent.play(envs, eps=self.eps, pbar=pbar, device=self.device)
+        self.agent.play(envs, batch_size=self.memory.batch_size,
+                        eps=eps, pbar=pbar)
 
-        for e in envs:
-            assert e.done
-            self.memory.store(e)
+        if memorize:
+            for e in envs:
+                assert e.done
+                self.memory.store(e)
+
+        return envs
+
+    def burn_in(self):
+        pbar = tqdm(total=self.p.num_burn_in, position=0,
+                    desc="Burning in", unit=" games",
+                    bar_format=pbar_format, leave=False)
+        envs = np.random.choice(self.train_set, self.p.num_burn_in,
+                                replace=False)
+        self.play(envs, eps=self.eps, pbar=pbar, memorize=True)
+        pbar.close()
+
+    def play_games(self) -> None:
+        """ Play through num_play complete environments drawn from the training
+            set using an epsilon-greedy strategy, then store completed envs
+            in replay memory. """
+        envs = np.random.choice(self.train_set, self.p.num_play, replace=False)
+        self.play(envs, pbar=self.play_pbar, eps=self.eps, memorize=True)
 
     def validate(self):
         """ Validate current policy net.
@@ -208,15 +236,5 @@ class Trainer(object):
             Average solution quality over the set of validation graphs.
             Solution quality is defined by the environment in question.
         """
-        for e in self.validation_set:
-            e.reset()
-
-        self.validate_pbar.reset()
-
-        # use a full greedy strategy (eps=0) for validation
-        self.agent.play(self.validation_set,
-                        eps=0, pbar=self.validate_pbar,
-                        device=self.device)
-        self.validate_pbar.clear()
-
-        return np.mean([e.sol_size for e in self.validation_set])
+        envs = self.play(self.validation_set, eps=0, pbar=self.validate_pbar)
+        return np.mean([e.sol_size for e in envs])
