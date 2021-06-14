@@ -24,15 +24,15 @@ def init_weights(module, w_scale):
     module.apply(_init_weights)
 
 
-def to_bitboard(s: torch.Tensor):
+def to_bitboard(s: np.ndarray):
     """ Turn a 2D (single board) or 3D (batch of boards) tensors whose
         elements are integer Status values to an equivalent bitboard.
         The return shape will be (batch_size, 4, h, w) if input was
         batched, otherwise (4, h, w) if unbatched, where h and w
         are the board height/width respectively. """
-    dim = 0 if s.ndim == 2 else 1
-    layers = [s.eq(status) for status in cfg.Status]
-    return torch.stack(layers, dim=dim).float()
+    axis = 0 if s.ndim == 2 else 1
+    layers = [s == status for status in cfg.Status]
+    return np.stack(layers, axis=axis)
 
 
 def set_seed(seed):

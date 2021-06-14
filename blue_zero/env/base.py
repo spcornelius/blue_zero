@@ -6,6 +6,7 @@ from gym import Env
 import blue_zero.config as cfg
 from blue_zero.config import Status
 from blue_zero.gui import BlueGUI
+import blue_zero.util as util
 
 __all__ = []
 __all__.extend([
@@ -24,12 +25,16 @@ class BlueEnv(Env):
                  **kwargs):
         super().__init__()
 
-        state = np.asarray(state, dtype=np.float32)
-        assert state.ndim == 2
-        assert np.isin(state, Status).all()
+        state = util.to_bitboard(np.asarray(state, dtype=np.float32))
+
+        # sanity tests
+        assert state.ndim == 3
+        assert state.shape[0] == len(cfg.Status)
+        assert np.all(np.sum(state, axis=0) == 1)
+
         self.state = state
 
-        h, w = self.state.shape
+        _, h, w = self.state.shape
         if reward_norm is None:
             self._reward_norm = 1.0
         elif reward_norm == 'board_size':
@@ -99,9 +104,7 @@ class BlueEnv(Env):
 
     @property
     def action_space(self) -> np.ndarray:
-        s = self.state
-        return np.argwhere(np.logical_or(s == Status.alive,
-                                         s == Status.dead))
+        return np.argwhere(self.state[Status.alive, :, :])
 
     def update(self) -> None:
         if self.show_gui:
@@ -118,10 +121,13 @@ class BlueEnv(Env):
         self.actions.append(ij)
         self.rewards.append(self.r)
 
-        # get reward and update state
+        # get reward
         dr = self.reward(ij)
-        assert self.state[i, j] == Status.alive
-        self.state[i, j] = Status.attacked
+
+        # update state (flip bit from alive to attacked
+        assert self.state[Status.alive, i, j]
+        self.state[Status.alive, i, j] = False
+        self.state[Status.attacked, i, j] = True
 
         # recompute clusters and check termination
         self.update()

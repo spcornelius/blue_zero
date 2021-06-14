@@ -66,7 +66,7 @@ class Agent(object):
                    return_q: bool = False):
         self.net.eval()
 
-        batched = s.ndim == 3
+        batched = s.ndim == 4
 
         with torch.no_grad():
             q = self.net(s)
@@ -99,7 +99,8 @@ class Agent(object):
             while unfinished_envs := [e for e in env_batch if not e.done]:
                 # batch the states together
                 batch = np.stack([e.state for e in unfinished_envs])
-                batch = torch.from_numpy(batch).to(device=self.net.device)
+                batch = torch.from_numpy(batch).to(device=self.net.device,
+                                                   dtype=torch.float32)
                 actions = self.get_action(batch, eps=eps).cpu().numpy()
                 for env, a in zip(unfinished_envs, actions):
                     _, _, done, _ = env.step(a)

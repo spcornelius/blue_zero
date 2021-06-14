@@ -41,11 +41,12 @@ class BlueMode3(BlueEnv, id='three'):
 
     def update(self):
         s = self.state
-        not_blocked = np.logical_or(s == Status.alive, s == Status.dead)
-        clusters, sizes = find_clusters(not_blocked)
-        spanning_clusters = self._get_spanning_clusters(clusters)
-        self.state[not_blocked] = Status.dead
-        idx = np.isin(clusters, list(spanning_clusters))
-        self.state[idx] = Status.alive
+        not_blocked = np.logical_or(s[Status.alive], s[Status.dead])
+        labels, cluster_sizes = find_clusters(not_blocked)
+        spanning_clusters = self._get_spanning_clusters(labels)
+
+        idx = np.isin(labels, list(spanning_clusters))
+        s[:, not_blocked] = False
+        s[Status.alive, idx] = True
         self._game_over = not spanning_clusters
         super().update()

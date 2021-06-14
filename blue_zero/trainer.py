@@ -157,23 +157,19 @@ class Trainer(object):
         """ Perform one optimization step, sampling a batch of transitions
             from replay memory and performing stochastic gradient descent.
         """
-        self.policy_net.train()
-        self.target_net.eval()
-
         s_prev, a, s, dr, terminal, dt = self.memory.sample(device=self.device)
 
         # get reward-to-go of next state according to target net
         # (but choosing the corresponding optimal action using the policy net)
-        with torch.no_grad():
-            self.policy_net.eval()
-            a_next = self.agent.get_action(s, eps=0)
-            self.policy_net.train()
-            q = self.target_net(s, a=a_next).detach()
+        a_next = self.agent.get_action(s, eps=0)
+        self.target_net.eval()
+        q = self.target_net(s, a=a_next).detach()
 
         # terminal states by definition have zero reward-to-go
         q[terminal] = 0.0
 
         # get q estimate using POLICY net
+        self.policy_net.train()
         q_prev = self.policy_net(s_prev, a=a)
 
         # update weights
@@ -201,7 +197,8 @@ class Trainer(object):
             e.reset()
             if rotate:
                 k = np.random.randint(0, 4)
-                e.state = np.ascontiguousarray(np.rot90(e.state, k=k))
+                e.state = np.ascontiguousarray(
+                    np.rot90(e.state, k=k, axes=(1, 2)))
 
         self.agent.play(envs, batch_size=self.memory.batch_size,
                         eps=eps, pbar=pbar)

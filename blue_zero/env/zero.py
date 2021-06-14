@@ -18,7 +18,7 @@ class BlueMode0(BlueEnv, id='zero'):
 
     def update(self):
         s = self.state
-        not_blocked = np.logical_or(s == Status.alive, s == Status.dead)
+        not_blocked = np.logical_or(s[Status.alive], s[Status.dead])
         labels, cluster_sizes = find_clusters(not_blocked)
 
         # note: cluster 0 is an artificial cluster corresponding to the wall
@@ -27,9 +27,10 @@ class BlueMode0(BlueEnv, id='zero'):
             self.max_non_lcc_size = max(self.max_non_lcc_size,
                                         np.sort(cluster_sizes)[-2])
 
-        idx = (s == Status.alive) & \
+        idx = (s[Status.alive]) & \
               (cluster_sizes[labels] <= self.max_non_lcc_size)
-        self.state[idx] = Status.dead
+        s[:, idx] = False
+        s[Status.dead, idx] = True
         self._game_over = np.all(cluster_sizes <= self.max_non_lcc_size)
         super().update()
 

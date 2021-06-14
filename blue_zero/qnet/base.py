@@ -75,17 +75,16 @@ class QNet(Module, metaclass=abc.ABCMeta):
     def forward(self, s: Union[torch.Tensor, np.ndarray],
                 a: Union[torch.Tensor,
                          tuple, List[tuple]] = None) -> torch.Tensor:
-        s = torch.as_tensor(s)
         board_size = s.shape[-2:]
         h, w = board_size
 
-        # treat like a batched state of shape (batch_size, h, w)
+        # treat like a batched state of shape (batch_size, 4, h, w)
         # even if we only have one state
-        s = s.view(-1, h, w)
+        s = s.view(-1, len(Status), h, w)
         batch_size = len(s)
 
         # get bitboard representation
-        s = util.to_bitboard(s)
+        # s = util.to_bitboard(s)
 
         # only want to calculate the average advantage over *valid* actions
         # zero out that of ineligible moves
