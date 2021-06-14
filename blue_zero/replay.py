@@ -1,5 +1,5 @@
 import random
-from collections import namedtuple, deque
+from collections import namedtuple
 from typing import Tuple
 
 import torch
@@ -31,7 +31,11 @@ class NStepReplayMemory(object):
         self.capacity = capacity
         self.batch_size = batch_size
         self.step_diff = step_diff
-        self._memory = deque(maxlen=capacity)
+        self.buffer = []
+        self.pos = 0
+
+    def __len__(self):
+        return len(self.buffer)
 
     def store(self, env: BlueEnv) -> None:
         """ Memorize all n-step transitions in a terminal environment.
@@ -74,8 +78,12 @@ class NStepReplayMemory(object):
                 terminal = False
                 dt = env.steps_taken - i
 
-            self._memory.append(Transition(s_prev, a, s, r - r_prev, terminal,
-                                           dt))
+            t = Transition(s_prev, a, s, r - r_prev, terminal, dt)
+            if len(self) < self.capacity:
+                self.buffer.append(t)
+            else:
+                self.buffer[self.pos] = t
+                self.pos = (self.pos + 1) % self.capacity
 
     def sample(self, device: str = 'cpu') -> Tuple:
         """
@@ -91,7 +99,7 @@ class NStepReplayMemory(object):
         """
         # device = self.device
         s_prev, a, s, dr, terminal, dt = list(
-            zip(*random.sample(self._memory, self.batch_size)))
+            zip(*random.sample(self.buffer, self.batch_size)))
 
         s_prev = torch.stack(s_prev).to(device=device)
         a = torch.stack(a).to(device=device)
@@ -101,6 +109,3 @@ class NStepReplayMemory(object):
         dt = torch.tensor(dt, device=device, dtype=torch.float32)
 
         return s_prev, a, s, dr, terminal, dt
-
-    def __len__(self):
-        return len(self._memory)
