@@ -9,6 +9,9 @@ __all__ = ['HyperParams', 'TrainParams']
 class TrainParams(Serializable):
     """ parameters for double-Q learning with N-step replay memory """
 
+    # minibatch size
+    batch_size: int
+
     # maximum number of training iterations to perform
     max_epochs: int
 

@@ -30,7 +30,8 @@ pbar_format = f"{l_bar}{{bar}}{r_bar}"
 optimizers = {'adam': optim.Adam,
               'adamw': optim.AdamW,
               'sgd': optim.SGD,
-              'rmsprop': optim.RMSprop}
+              'rmsprop': optim.RMSprop,
+              'adadelta': optim.Adadelta}
 
 
 class Trainer(object):
@@ -113,6 +114,7 @@ class Trainer(object):
 
         loss = np.nan
         self.train_pbar.refresh()
+
         while self.epoch < p.max_epochs:
             if self.epoch % p.play_freq == 0:
                 self.play_pbar.reset()
@@ -157,24 +159,25 @@ class Trainer(object):
         """ Perform one optimization step, sampling a batch of transitions
             from replay memory and performing stochastic gradient descent.
         """
-        s_prev, a, s, dr, terminal, dt = self.memory.sample(device=self.device)
+        s_prev, a, s, r, terminal = self.memory.sample(self.p.batch_size)
+
+        self.policy_net.train()
+        self.target_net.eval()
 
         # get reward-to-go of next state according to target net
         # (but choosing the corresponding optimal action using the policy net)
         a_next = self.agent.get_action(s, eps=0)
-        self.target_net.eval()
         q = self.target_net(s, a=a_next).detach()
 
         # terminal states by definition have zero reward-to-go
         q[terminal] = 0.0
 
         # get q estimate using POLICY net
-        self.policy_net.train()
         q_prev = self.policy_net(s_prev, a=a)
 
-        # update weights
+        # update weightss
         self.optimizer.zero_grad()
-        loss = self.loss_func(q_prev, dr + self.p.gamma ** dt * q)
+        loss = self.loss_func(q + r, q_prev)
         loss.backward()
         if self.p.clip_gradients:
             clip_grad_norm_(self.policy_net.parameters(), self.p.max_grad)
@@ -200,13 +203,13 @@ class Trainer(object):
                 e.state = np.ascontiguousarray(
                     np.rot90(e.state, k=k, axes=(1, 2)))
 
-        self.agent.play(envs, batch_size=self.memory.batch_size,
+        self.agent.play(envs, batch_size=self.p.batch_size,
                         eps=eps, pbar=pbar)
 
         if memorize:
             for e in envs:
                 assert e.done
-                self.memory.store(e)
+                self.memory.store(e, self.p.gamma)
 
         return envs
 

@@ -56,7 +56,6 @@ class BlueEnv(Env):
         self.actions = []
         self.rewards = []
         self.steps_taken = 0
-        self.r = 0.0
 
         # keep copy of initial state for resetting
         self._state_orig = self.state.copy()
@@ -99,7 +98,7 @@ class BlueEnv(Env):
 
     @property
     def sol_size(self):
-        return int(np.abs(self.r) * self._reward_norm)
+        return int(np.sum(np.abs(self.rewards)) * self._reward_norm)
 
     # noinspection PyUnusedLocal
     def reward(self, action) -> float:
@@ -122,10 +121,10 @@ class BlueEnv(Env):
         # record current status in history
         self.states.append(self.state.copy())
         self.actions.append(ij)
-        self.rewards.append(self.r)
 
         # get reward
-        dr = self.reward(ij)
+        r = self.reward(ij)
+        self.rewards.append(r)
 
         # update state (flip bit from alive to attacked
         assert self.state[Status.alive, i, j]
@@ -140,18 +139,16 @@ class BlueEnv(Env):
             green_pct_prev = self.states[-1][Status.alive].mean()
             green_pct = self.state[Status.alive].mean()
 
-            dr += (green_pct_prev - green_pct)/self._green_pct_init
+            r += (green_pct_prev - green_pct)/self._green_pct_init
 
-        self.r += dr
         self.steps_taken += 1
 
-        return self.state, dr, self._game_over, None
+        return self.state, r, self._game_over, None
 
     def reset(self):
         self.states.clear()
         self.actions.clear()
         self.rewards.clear()
-        self.r = 0.0
         self.steps_taken = 0
         self.state = self._state_orig.copy()
         self._game_over = False

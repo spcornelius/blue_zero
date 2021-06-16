@@ -21,7 +21,7 @@ training:
   eps_decay_time: 500_000
   eps_start: 1.0
   eps_end: 0.1
-  gamma: 1.0
+  gamma: 0.95
   clip_gradients: true
   max_grad: 1.0
   num_burn_in: 1_000
