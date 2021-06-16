@@ -22,6 +22,7 @@ class BlueEnv(Env):
                  show_gui: bool = False,
                  screen_size: Tuple[int, int] = cfg.screen_size,
                  reward_norm: Union[str, float] = None,
+                 shape_rewards: bool = False,
                  **kwargs):
         super().__init__()
 
@@ -48,6 +49,8 @@ class BlueEnv(Env):
                 f"Unrecognized reward normalization strategy: {reward_norm}")
 
         self.show_gui = show_gui
+        self.shape_rewards = shape_rewards
+        self._green_pct_init = self.state[Status.alive].mean()
 
         self.states = []
         self.actions = []
@@ -131,6 +134,14 @@ class BlueEnv(Env):
 
         # recompute clusters and check termination
         self.update()
+
+        # add adjust reward up for the fraction of green squares cleared
+        if self.shape_rewards:
+            green_pct_prev = self.states[-1][Status.alive].mean()
+            green_pct = self.state[Status.alive].mean()
+
+            dr += (green_pct_prev - green_pct)/self._green_pct_init
+
         self.r += dr
         self.steps_taken += 1
 
