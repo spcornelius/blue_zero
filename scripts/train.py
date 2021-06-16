@@ -53,7 +53,8 @@ def main(config_file: Path, train_file: Path, validation_file: Path,
     validation_set = load_envs(validation_file, **params.mode)
 
     net = QNet.create(**params.qnet)
-    memory = NStepReplayMemory(**params.replay)
+    util.init_weights(net)
+    memory = NStepReplayMemory(**params.replay, device=device)
     trainer = Trainer(net, train_set, validation_set, memory,
                       params.training, device=device)
     trained_net = trainer.train()

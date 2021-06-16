@@ -9,15 +9,10 @@ from wurlitzer import pipes
 __all__ = ['init_weights', 'to_bitboard', 'set_seed']
 
 
-def init_weights(module, w_scale):
+def init_weights(module):
     def _init_weights(m):
         try:
-            m.weight.data.uniform_(-w_scale, w_scale)
-        except AttributeError:
-            pass
-
-        try:
-            m.bias.data.uniform_(-w_scale, w_scale)
+            torch.nn.init.zeros_(m.bias)
         except AttributeError:
             pass
 
