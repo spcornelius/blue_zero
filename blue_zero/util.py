@@ -4,6 +4,7 @@ import os
 import random
 import numpy as np
 from wurlitzer import pipes
+from torch.nn import Conv2d
 
 
 __all__ = ['init_weights', 'to_bitboard', 'set_seed']
@@ -11,6 +12,9 @@ __all__ = ['init_weights', 'to_bitboard', 'set_seed']
 
 def init_weights(module):
     def _init_weights(m):
+        if isinstance(m, Conv2d):
+            torch.nn.init.kaiming_uniform_(m.weight, nonlinearity='relu',
+                                           mode='fan_in')
         try:
             torch.nn.init.zeros_(m.bias)
         except AttributeError:
