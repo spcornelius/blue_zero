@@ -4,7 +4,7 @@ from typing import Iterable
 import numpy as np
 import torch
 import torch.optim as optim
-from torch.nn.utils import clip_grad_norm_, clip_grad_value_
+from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 
 from blue_zero.agent import Agent
@@ -12,8 +12,6 @@ from blue_zero.env import BlueEnv
 from blue_zero.params import TrainParams
 from blue_zero.qnet import QNet
 from blue_zero.replay import NStepReplayMemory
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-import blue_zero.util as util
 
 __all__ = []
 __all__.extend([
@@ -53,7 +51,7 @@ class Trainer(object):
         self.policy_net.train()
 
         self.target_net = deepcopy(self.policy_net)
-        self.target_net.eval()
+        self.target_net.train()
 
         self.agent = Agent(self.policy_net)
 
@@ -159,10 +157,10 @@ class Trainer(object):
         """ Perform one optimization step, sampling a batch of transitions
             from replay memory and performing stochastic gradient descent.
         """
-        s_prev, a, s, r, terminal = self.memory.sample(self.p.batch_size)
+        s_prev, a, s, r, terminal, dt = self.memory.sample(self.p.batch_size)
 
         self.policy_net.train()
-        self.target_net.eval()
+        self.target_net.train()
 
         # get reward-to-go of next state according to target net
         # (but choosing the corresponding optimal action using the policy net)
@@ -175,7 +173,7 @@ class Trainer(object):
         # get q estimate using POLICY net
         q_prev = self.policy_net(s_prev, a=a)
 
-        # update weightss
+        # update weights
         self.optimizer.zero_grad()
         loss = self.loss_func(q + r, q_prev)
         loss.backward()
