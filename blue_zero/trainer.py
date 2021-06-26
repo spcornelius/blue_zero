@@ -48,11 +48,7 @@ class Trainer(object):
 
         self.policy_net = net
         self.policy_net.to(device)
-        self.policy_net.train()
-
         self.target_net = deepcopy(self.policy_net)
-        self.target_net.train()
-
         self.agent = Agent(self.policy_net)
 
         self.train_set = list(train_set)
@@ -97,13 +93,16 @@ class Trainer(object):
         self.play_pbar.clear()
         self.validate_pbar.clear()
 
+        self.losses = {}
+        self.snapshots = {}
+
     @property
     def eps(self) -> float:
         """ Current value of epsilon (random action probability). """
         e1, e2, t = self.p.eps_start, self.p.eps_end, self.p.eps_decay_time
         return e2 + max(0.0, (e1 - e2) * (t - self.epoch) / t)
 
-    def train(self) -> QNet:
+    def train(self):
         p = self.p
 
         print()
@@ -120,15 +119,26 @@ class Trainer(object):
                 self.play_pbar.clear()
 
             if self.epoch % p.validation_freq == 0:
+                self.validate_pbar.reset()
                 perf = self.validate()
+                self.validate_pbar.clear()
                 self.status_pbar.postfix[0] = loss
                 self.status_pbar.postfix[1] = perf
                 self.status_pbar.refresh()
+
+            # snapshot network *before* adjusting weights
+            try:
+                if self.epoch % p.snapshot_freq == 0:
+                    self.snapshots[self.epoch] = deepcopy(self.policy_net)
+            except ZeroDivisionError:
+                pass
 
             # do one fit iteration
             loss = self.fit()
             self.train_pbar.update(1)
             self.train_pbar.refresh()
+
+            self.losses[self.epoch] = loss
 
             # update target network from policy network if necessary, using
             # the specified approach
@@ -140,7 +150,7 @@ class Trainer(object):
 
             self.epoch += 1
 
-        return self.agent.net
+        return self.policy_net, self.snapshots, self.losses
 
     def _soft_update_target(self) -> None:
         tau = self.p.soft_update_rate
@@ -158,9 +168,6 @@ class Trainer(object):
             from replay memory and performing stochastic gradient descent.
         """
         s_prev, a, s, r, terminal, dt = self.memory.sample(self.p.batch_size)
-
-        self.policy_net.train()
-        self.target_net.train()
 
         # get reward-to-go of next state according to target net
         # (but choosing the corresponding optimal action using the policy net)
@@ -217,6 +224,7 @@ class Trainer(object):
                     bar_format=pbar_format, leave=False)
         envs = np.random.choice(self.train_set, self.p.num_burn_in,
                                 replace=False)
+        self.policy_net.train()
         self.play(envs, eps=self.eps, pbar=pbar, memorize=True)
         pbar.close()
 
@@ -225,6 +233,7 @@ class Trainer(object):
             set using an epsilon-greedy strategy, then store completed envs
             in replay memory. """
         envs = np.random.choice(self.train_set, self.p.num_play, replace=False)
+        self.policy_net.train()
         self.play(envs, pbar=self.play_pbar, eps=self.eps, memorize=True)
 
     def validate(self):
@@ -234,5 +243,6 @@ class Trainer(object):
             Average solution quality over the set of validation graphs.
             Solution quality is defined by the environment in question.
         """
+        self.policy_net.eval()
         envs = self.play(self.validation_set, eps=0, pbar=self.validate_pbar)
         return np.mean([e.sol_size for e in envs])

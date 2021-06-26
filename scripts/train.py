@@ -57,7 +57,7 @@ def main(config_file: Path, train_file: Path, validation_file: Path,
     memory = NStepReplayMemory(**params.replay, device=device)
     trainer = Trainer(net, train_set, validation_set, memory,
                       params.training, device=device)
-    trained_net = trainer.train()
+    trained_net, snapshots, losses = trainer.train()
     trained_net.save(output_file)
 
 

@@ -59,6 +59,9 @@ class TrainParams(Serializable):
     # method used to update target qnet from policy qnet
     target_update_mode: str = choice('hard', 'soft')
 
+    # how often to record network snapshots / losses
+    snapshot_freq: int = 0
+
 
 @dataclass
 class HyperParams(Serializable):

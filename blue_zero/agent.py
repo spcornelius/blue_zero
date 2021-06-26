@@ -64,8 +64,6 @@ class Agent(object):
     def get_action(self, s: torch.Tensor,
                    eps: float = 0.0,
                    return_q: bool = False):
-        self.net.eval()
-
         batched = s.ndim == 4
 
         with torch.no_grad():
