@@ -114,14 +114,10 @@ class Trainer(object):
 
         while self.epoch < p.max_epochs:
             if self.epoch % p.play_freq == 0:
-                self.play_pbar.reset()
                 self.play_games()
-                self.play_pbar.clear()
 
             if self.epoch % p.validation_freq == 0:
-                self.validate_pbar.reset()
                 perf = self.validate()
-                self.validate_pbar.clear()
                 self.status_pbar.postfix[0] = loss
                 self.status_pbar.postfix[1] = perf
                 self.status_pbar.refresh()
@@ -169,16 +165,15 @@ class Trainer(object):
         """
         s_prev, a, s, r, terminal, dt = self.memory.sample(self.p.batch_size)
 
-        # get reward-to-go of next state according to target net
-        # (but choosing the corresponding optimal action using the policy net)
-        a_next = self.agent.get_action(s, eps=0)
-        q = self.target_net(s, a=a_next).detach()
-
-        # terminal states by definition have zero reward-to-go
-        q[terminal] = 0.0
-
         # get q estimate using POLICY net
         q_prev = self.policy_net(s_prev, a=a)
+
+        q = torch.zeros_like(q_prev)
+
+        # get reward-to-go of next state according to target net
+        # (but choosing the corresponding optimal action using the policy net)
+        a_next = self.agent.get_action(s[~terminal], eps=0)
+        q[~terminal] = self.target_net(s[~terminal], a=a_next).detach()
 
         # update weights
         self.optimizer.zero_grad()
@@ -234,7 +229,9 @@ class Trainer(object):
             in replay memory. """
         envs = np.random.choice(self.train_set, self.p.num_play, replace=False)
         self.policy_net.train()
+        self.play_pbar.reset()
         self.play(envs, pbar=self.play_pbar, eps=self.eps, memorize=True)
+        self.play_pbar.clear()
 
     def validate(self):
         """ Validate current policy net.
@@ -244,5 +241,7 @@ class Trainer(object):
             Solution quality is defined by the environment in question.
         """
         self.policy_net.eval()
-        envs = self.play(self.validation_set, eps=0, pbar=self.validate_pbar)
+        self.validate_pbar.reset()
+        envs = self.play(self.validation_set, eps=0.01, pbar=self.validate_pbar)
+        self.validate_pbar.clear()
         return np.mean([e.sol_size for e in envs])
