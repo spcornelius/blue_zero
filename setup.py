@@ -23,8 +23,9 @@ if args.count("build_ext") > 0 and args.count("--inplace") == 0:
 clusters_ext = Extension("blue_zero.clusters.clusters",
                          ["blue_zero/clusters/clusters.pyx"],
                          include_dirs=[np.get_include()],
-                         extra_compile_args=['-O3']
+                         extra_compile_args=['-O3'],
                          )
+clusters_ext.cython_directives = {'language_level': "3"}
 
 if __name__ == '__main__':
     setup(
