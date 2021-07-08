@@ -5,7 +5,7 @@ qnet:
   num_feat: 32
   bias: true
 mode:
-  id: 'zero'
+  id: 0
   # blank = no normalization of rewards
   reward_norm:
   shape_rewards: false
@@ -23,12 +23,12 @@ training:
   max_grad: 1.0
   num_burn_in: 1_000
   play_freq: 100
-  num_play: 10
+  num_play: 100
   validation_freq: 100
   target_update_mode: hard
   soft_update_rate: 1.0e-4
-  hard_update_freq: 20_000
+  hard_update_freq: 100_000
   snapshot_freq: 1000
   optimizer:
     name: 'adam'
-    lr: 1.0e-4
+    lr: 1.0e-3

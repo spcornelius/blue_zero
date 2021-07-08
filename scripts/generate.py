@@ -22,7 +22,7 @@ parser.add_argument('-o', dest='out_file', metavar='OUT_FILE',
                     type=Path, required=True,
                     help="where to save generated boards")
 parser.add_argument('--mode', dest='mode',
-                    type=str, required=True,
+                    type=int, required=True,
                     help="game mode", choices=mode_registry.keys())
 parser.add_argument('--direction', type=str, default='horizontal',
                     choices=['horizontal', 'vertical', 'both'],

@@ -10,7 +10,7 @@ __all__.extend([
 ])
 
 
-class BlueMode0(BlueEnv, id='zero'):
+class BlueMode0(BlueEnv, id=0):
 
     def __init__(self, *args, **kwargs):
         self.max_non_lcc_size = 0

@@ -10,7 +10,7 @@ __all__.extend([
 ])
 
 
-class BlueMode3(BlueEnv, id='three'):
+class BlueMode3(BlueEnv, id=3):
 
     def __init__(self, *args, direction: str = 'horizontal', **kwargs):
         direction = direction.lower()

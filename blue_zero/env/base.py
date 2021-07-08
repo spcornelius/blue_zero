@@ -62,7 +62,7 @@ class BlueEnv(Env):
         self._game_over = False
 
         if self.show_gui:
-            self.gui = BlueGUI(self.state.shape,
+            self.gui = BlueGUI(self.state.shape[1:],
                                screen_size=screen_size)
 
         self.update()
@@ -72,8 +72,8 @@ class BlueEnv(Env):
     def __init_subclass__(cls, id: str, **kwargs):
         if id in mode_registry:
             raise TypeError(
-                f"There is already a subclass of BlueEnv registered with"
-                f"id '{id}'.")
+                f"There is already a subclass of BlueEnv registered with "
+                f"id {id}.")
         cls._id = id
         mode_registry[id] = cls
 
