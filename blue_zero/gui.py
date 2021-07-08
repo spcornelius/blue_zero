@@ -36,13 +36,13 @@ class BlueGUI(object):
         self.rects = dict()
 
     def draw_board(self, state: Union[Tensor, np.ndarray]) -> None:
-        board_h, board_w = state.shape
+        board_h, board_w = state.shape[1:]
         assert board_h == self.board_h
         assert board_w == self.board_w
 
         self.rects = dict()
         for status in cfg.Status:
-            for ij in np.argwhere(state == status):
+            for ij in np.argwhere(state[status]):
                 i, j = tuple(ij)
                 left = self.cell_w * j + self.pad_w * (j + 1)
                 top = self.cell_h * i + self.pad_h * (i + 1)
