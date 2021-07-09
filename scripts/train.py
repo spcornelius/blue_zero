@@ -37,14 +37,19 @@ class Options:
     seed: int = field(alias='-s', default=None, required=False)
 
 
-def load_envs(board_file, **kwargs):
+def load_envs(board_file, rotate=False, **kwargs):
     boards = np.stack(*np.load(board_file).values())
 
     def rot(state, k):
         return np.ascontiguousarray(np.rot90(state, k=k))
 
+    if rotate:
+        k_max = 4
+    else:
+        k_max = 1
+
     return [BlueEnv.create(board=rot(board, k), **kwargs) for board in boards
-            for k in range(0, 4)]
+            for k in range(0, k_max)]
 
 
 def main(config_file: Path, train_file: Path, validation_file: Path,
@@ -54,7 +59,7 @@ def main(config_file: Path, train_file: Path, validation_file: Path,
 
     params = HyperParams.load(config_file)
 
-    train_set = load_envs(train_file, **params.mode)
+    train_set = load_envs(train_file, rotate=True, **params.mode)
     validation_set = load_envs(validation_file, **params.mode)
 
     net = QNet.create(**params.qnet)
