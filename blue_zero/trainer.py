@@ -98,7 +98,7 @@ class Trainer(object):
     @property
     def eps(self) -> float:
         """ Current value of epsilon (random action probability). """
-        e1, e2, t = self.p.eps_start, self.p.eps_end, self.p.anneal_epochs
+        e1, e2, t = self.p.eps_max, self.p.eps_min, self.p.anneal_epochs
         return e2 + max(0.0, (e1 - e2) * (t - self.epoch) / t)
 
     @property
