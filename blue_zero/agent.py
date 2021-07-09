@@ -2,6 +2,7 @@ from typing import Union, Iterable
 
 import numpy as np
 import torch
+import abc
 from torch.nn.functional import softmax
 from more_itertools import chunked
 from tqdm import tqdm
@@ -11,7 +12,7 @@ from blue_zero.qnet import QNet
 
 __all__ = []
 __all__.extend([
-    'Agent', 'EpsGreedyAgent', 'SoftMaxAgent'
+    'Agent', 'QAgent', 'EpsGreedyQAgent', 'SoftMaxQAgent'
 ])
 
 
@@ -22,7 +23,14 @@ def flat_to_2d(idx, w):
          (idx % w).view(-1, 1)), dim=1)
 
 
-class Agent(object):
+class Agent(metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def get_action(self, s: torch.Tensor):
+        pass
+
+
+class QAgent(Agent):
 
     def __init__(self, net: QNet):
         self.net = net
@@ -76,7 +84,7 @@ class Agent(object):
                     pbar.refresh()
 
 
-class EpsGreedyAgent(Agent):
+class EpsGreedyQAgent(QAgent):
 
     def __init__(self, net: QNet, eps: float = 0.0):
         super().__init__(net)
@@ -102,7 +110,7 @@ class EpsGreedyAgent(Agent):
         return ij, q_new
 
 
-class SoftMaxAgent(Agent):
+class SoftMaxQAgent(QAgent):
     def __init__(self, net: QNet, T: float = 0.0):
         super().__init__(net)
         self.T = T

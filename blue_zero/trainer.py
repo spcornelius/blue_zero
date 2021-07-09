@@ -7,7 +7,7 @@ import torch.optim as optim
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 
-from blue_zero.agent import Agent, EpsGreedyAgent, SoftMaxAgent
+from blue_zero.agent import QAgent, EpsGreedyQAgent, SoftMaxQAgent
 from blue_zero.env import BlueEnv
 from blue_zero.params import TrainParams
 from blue_zero.qnet import QNet
@@ -110,13 +110,13 @@ class Trainer(object):
 
     def create_agent(self, greedy: bool = False):
         if greedy:
-            return Agent(self.policy_net)
+            return QAgent(self.policy_net)
 
         exploration = self.p.exploration
         if exploration == 'eps_greedy':
-            return EpsGreedyAgent(self.policy_net, self.eps)
+            return EpsGreedyQAgent(self.policy_net, self.eps)
         elif exploration == 'softmax':
-            return SoftMaxAgent(self.policy_net, self.T)
+            return SoftMaxQAgent(self.policy_net, self.T)
         else:
             raise ValueError(
                 f"Unrecognized exploration strategy '{exploration}'.")
