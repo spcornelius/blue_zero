@@ -39,7 +39,12 @@ class Options:
 
 def load_envs(board_file, **kwargs):
     boards = np.stack(*np.load(board_file).values())
-    return [BlueEnv.create(board=board, **kwargs) for board in boards]
+
+    def rot(state, k):
+        return np.ascontiguousarray(np.rot90(state, k=k))
+
+    return [BlueEnv.create(board=rot(board, k), **kwargs) for board in boards
+            for k in range(0, 4)]
 
 
 def main(config_file: Path, train_file: Path, validation_file: Path,

@@ -208,7 +208,6 @@ class Trainer(object):
     def play(self,
              envs: Iterable[BlueEnv],
              pbar: tqdm = None,
-             rotate: bool = True,
              greedy: bool = False,
              memorize: bool = False):
 
@@ -217,10 +216,6 @@ class Trainer(object):
         pbar.reset()
         for e in envs:
             e.reset()
-            if rotate:
-                k = np.random.randint(0, 4)
-                e.state = np.ascontiguousarray(
-                    np.rot90(e.state, k=k, axes=(1, 2)))
 
         agent.play(envs, batch_size=self.p.batch_size,
                    pbar=pbar)
