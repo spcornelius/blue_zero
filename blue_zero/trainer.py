@@ -7,7 +7,7 @@ import torch.optim as optim
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 
-from blue_zero.agent import Agent
+from blue_zero.agent import Agent, EpsGreedyAgent, SoftMaxAgent
 from blue_zero.env import BlueEnv
 from blue_zero.params import TrainParams
 from blue_zero.qnet import QNet
@@ -49,7 +49,6 @@ class Trainer(object):
         self.policy_net = net
         self.policy_net.to(device)
         self.target_net = deepcopy(self.policy_net)
-        self.agent = Agent(self.policy_net)
 
         self.train_set = list(train_set)
         self.validation_set = list(validation_set)
@@ -99,8 +98,28 @@ class Trainer(object):
     @property
     def eps(self) -> float:
         """ Current value of epsilon (random action probability). """
-        e1, e2, t = self.p.eps_start, self.p.eps_end, self.p.eps_decay_time
+        e1, e2, t = self.p.eps_start, self.p.eps_end, self.p.anneal_epochs
         return e2 + max(0.0, (e1 - e2) * (t - self.epoch) / t)
+
+    @property
+    def T(self) -> float:
+        """ Current value of T (temperature for Boltzmann kernel). """
+        p = self.p
+        t = self.epoch
+        return p.T_min + np.exp(-t/p.anneal_epochs)*(p.T_max - p.T_min)
+
+    def create_agent(self, greedy: bool = False):
+        if greedy:
+            return Agent(self.policy_net)
+
+        exploration = self.p.exploration
+        if exploration == 'eps_greedy':
+            return EpsGreedyAgent(self.policy_net, self.eps)
+        elif exploration == 'softmax':
+            return SoftMaxAgent(self.policy_net, self.T)
+        else:
+            raise ValueError(
+                f"Unrecognized exploration strategy '{exploration}'.")
 
     def train(self):
         p = self.p
@@ -172,7 +191,8 @@ class Trainer(object):
 
         # get reward-to-go of next state according to target net
         # (but choosing the corresponding optimal action using the policy net)
-        a_next = self.agent.get_action(s[~terminal], eps=0)
+        agent = self.create_agent(greedy=True)
+        a_next = agent.get_action(s[~terminal])
         q[~terminal] = self.target_net(s[~terminal], a=a_next).detach()
 
         # update weights
@@ -187,13 +207,12 @@ class Trainer(object):
 
     def play(self,
              envs: Iterable[BlueEnv],
-             eps: float = None,
              pbar: tqdm = None,
              rotate: bool = True,
+             greedy: bool = False,
              memorize: bool = False):
 
-        if eps is None:
-            eps = self.eps
+        agent = self.create_agent(greedy=greedy)
 
         pbar.reset()
         for e in envs:
@@ -203,8 +222,8 @@ class Trainer(object):
                 e.state = np.ascontiguousarray(
                     np.rot90(e.state, k=k, axes=(1, 2)))
 
-        self.agent.play(envs, batch_size=self.p.batch_size,
-                        eps=eps, pbar=pbar)
+        agent.play(envs, batch_size=self.p.batch_size,
+                   pbar=pbar)
 
         if memorize:
             for e in envs:
@@ -220,7 +239,7 @@ class Trainer(object):
         envs = np.random.choice(self.train_set, self.p.num_burn_in,
                                 replace=False)
         self.policy_net.train()
-        self.play(envs, eps=self.eps, pbar=pbar, memorize=True)
+        self.play(envs, pbar=pbar, memorize=True)
         pbar.close()
 
     def play_games(self) -> None:
@@ -230,7 +249,7 @@ class Trainer(object):
         envs = np.random.choice(self.train_set, self.p.num_play, replace=False)
         self.policy_net.train()
         self.play_pbar.reset()
-        self.play(envs, pbar=self.play_pbar, eps=self.eps, memorize=True)
+        self.play(envs, pbar=self.play_pbar, memorize=True)
         self.play_pbar.clear()
 
     def validate(self):
@@ -242,6 +261,7 @@ class Trainer(object):
         """
         self.policy_net.eval()
         self.validate_pbar.reset()
-        envs = self.play(self.validation_set, eps=0.01, pbar=self.validate_pbar)
+        envs = self.play(self.validation_set, greedy=True,
+                         pbar=self.validate_pbar)
         self.validate_pbar.clear()
         return np.mean([e.sol_size for e in envs])

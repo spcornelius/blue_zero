@@ -1,6 +1,6 @@
 qnet:
   id: 'simple'
-  depth: 5
+  depth: 10
   kernel_size: 3
   num_feat: 32
   bias: true
@@ -13,12 +13,16 @@ replay:
   capacity: 1_000_000
   step_diff: 1
 training:
-  batch_size: 256
+  batch_size: 128
   max_epochs: 500_000
-  eps_decay_time: 100_000
-  eps_start: 1.0
-  eps_end: 0.01
-  gamma: 1.0
+  anneal_epochs: 10_000
+  exploration: softmax
+  T_max: 100.0
+  T_min: 1.0
+  # exploration: eps_greedy
+  # eps_max: 1.0
+  # eps_min: 0.01
+  gamma: 0.95
   clip_gradients: true
   max_grad: 1.0
   num_burn_in: 1_000
@@ -26,8 +30,8 @@ training:
   num_play: 100
   validation_freq: 100
   target_update_mode: hard
-  soft_update_rate: 1.0e-4
-  hard_update_freq: 100_000
+  soft_update_rate: 1.0e-5
+  hard_update_freq: 1_000
   snapshot_freq: 1000
   optimizer:
     name: 'adam'

@@ -21,14 +21,8 @@ class TrainParams(Serializable):
     # number of training examples to play each time
     num_play: int
 
-    # initial random move probability for greedy epsilon strategy
-    eps_start: float
-
-    # final random move probability for greedy epsilon strategy
-    eps_end: float
-
-    # number of epochs to go from eps_start to eps_end
-    eps_decay_time: float
+    # number of epochs to anneal exploration parameter
+    anneal_epochs: int
 
     # hard update the target network every this many epochs
     # (ignored unless target_update_mode = hard)
@@ -61,6 +55,21 @@ class TrainParams(Serializable):
 
     # how often to record network snapshots / losses
     snapshot_freq: int = 0
+
+    # exploration strategy
+    exploration: str = choice('eps_greedy', 'softmax')
+
+    # initial random move probability for greedy epsilon strategy
+    eps_max: float = 1.0
+
+    # final random move probability for greedy epsilon strategy
+    eps_min: float = 0.01
+
+    # initial temperature for Boltzmann kernel
+    T_max: float = 100.0
+
+    # final (asymptotic) temperature for Boltzmann kernel
+    T_min: float = 1.0
 
 
 @dataclass
