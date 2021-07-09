@@ -6,7 +6,7 @@ import pygame
 from pathlib import Path
 from simple_parsing import ArgumentParser, field
 
-from blue_zero.agent import Agent
+from blue_zero.agent import QAgent
 from blue_zero.env import ModeOptions
 from blue_zero.qnet.base import QNet
 from blue_zero.env.util import env_cls
@@ -33,7 +33,7 @@ class Options:
 def main(file: Path, n: int, p: float, mode: int,
          pause: float = 0.2, **kwargs):
     net = QNet.load(file)
-    agent = Agent(net)
+    agent = QAgent(net)
     env = env_cls[mode].from_random((n, n), p, show_gui=True, **kwargs)
 
     started = False
