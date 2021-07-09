@@ -63,7 +63,7 @@ class Trainer(object):
         except KeyError:
             raise ValueError(f"Unrecognized optimizer '{opt_name}'.")
         self.optimizer = Opt(weights, **opt_kwargs)
-        self.loss_func = torch.nn.MSELoss()
+        self.loss_func = torch.nn.SmoothL1Loss()
 
         self.epoch = 0
         self.best_epoch = None
