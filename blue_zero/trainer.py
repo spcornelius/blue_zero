@@ -133,7 +133,7 @@ class Trainer(object):
 
         while self.epoch < p.max_epochs:
             if self.epoch % p.play_freq == 0:
-                self.play_games()
+                self.rollout()
 
             if self.epoch % p.validation_freq == 0:
                 perf = self.validate()
@@ -242,7 +242,7 @@ class Trainer(object):
         self.play(envs, pbar=pbar, memorize=True)
         pbar.close()
 
-    def play_games(self) -> None:
+    def rollout(self) -> None:
         """ Play through num_play complete environments drawn from the training
             set using an epsilon-greedy strategy, then store completed envs
             in replay memory. """
