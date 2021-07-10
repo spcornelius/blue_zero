@@ -43,8 +43,6 @@ class BlueMode4(BlueEnv, id=4):
         # nz_sizes = sizes[labels] + (sizes[labels] == 0).astype(int)
         perimeters = np.bincount(labels.flat, weights=boundary_contacts.flat)
 
-        import ipdb
-        ipdb.set_trace()
         sizes[0] = 1
         idx = ((perimeters / sizes) >= self.d)[labels]
         self.state[:, idx] = False

@@ -63,12 +63,16 @@ def main(config_file: Path, train_file: Path, validation_file: Path,
     validation_set = load_envs(validation_file, **params.mode)
 
     net = QNet.create(**params.qnet)
-    util.init_weights(net)
+    # util.init_weights(net)
     memory = NStepReplayMemory(**params.replay, device=device)
     trainer = Trainer(net, train_set, validation_set, memory,
                       params.training, device=device)
     trained_net, snapshots, losses = trainer.train()
     trained_net.save(output_file)
+    data = dict(trained_net=trained_net, snapshots=snapshots, losses=losses)
+    data['trained_net'] = trained_net
+    data['snapshots'] = snapshots
+    data['losses'] = losses
 
 
 if __name__ == "__main__":
