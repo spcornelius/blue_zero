@@ -4,8 +4,8 @@ from typing import Union, Tuple
 
 import torch
 from torch.nn import Conv2d, ReLU, Sequential, BatchNorm2d, Identity
+from torch.nn.functional import relu
 
-from blue_zero.config import Status
 from blue_zero.qnet.base import QNet
 
 __all__ = ['DuelingQNet']
@@ -41,13 +41,13 @@ class DuelingQNet(QNet, id='dueling'):
                             bias=self.bias)
 
         BN = partial(BatchNorm2d,
-                     momentum=0.01) if self.batchnorm else Identity
+                     momentum=self.bn_momentum) if self.batchnorm else Identity
 
         # convolutions serving as fc layers (mixing channels post-embedding)
         FCConv = partial(Conv2d, kernel_size=(1, 1), bias=self.bias)
 
         # initial convolution (1 channel input --> num_feat channel output)
-        layers = [EmbedConv(4, self.num_feat),
+        layers = [FCConv(4, self.num_feat),
                   BN(self.num_feat),
                   ReLU()]
 
@@ -58,14 +58,15 @@ class DuelingQNet(QNet, id='dueling'):
                            ReLU()])
 
         self.embed = Sequential(*layers)
+        self.state_fc = FCConv(4 * self.num_feat, self.num_feat)
 
-        self.value = Sequential(FCConv(4 * self.num_feat, self.num_hidden),
+        self.value = Sequential(FCConv(self.num_feat, self.num_hidden),
                                 BN(self.num_hidden),
                                 ReLU(),
                                 FCConv(self.num_hidden, 1)
                                 )
 
-        self.advantage = Sequential(FCConv(5 * self.num_feat, self.num_hidden),
+        self.advantage = Sequential(FCConv(2 * self.num_feat, self.num_hidden),
                                     BN(self.num_hidden),
                                     ReLU(),
                                     FCConv(self.num_hidden, 1)
@@ -87,7 +88,7 @@ class DuelingQNet(QNet, id='dueling'):
 
         # representation of board state as a whole
         # shape is (batch_size, 3 * num_feat, 1)
-        s_rep = torch.cat((avg, max_, min_, sum_), dim=1)
+        s_rep = relu(self.state_fc(torch.cat((avg, max_, min_, sum_), dim=1)))
 
         # board representation + action representations combined
         # board state is simply repeated for every square in that board
