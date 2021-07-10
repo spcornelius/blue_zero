@@ -13,8 +13,7 @@ __all__ = ['init_weights', 'to_bitboard', 'set_seed']
 def init_weights(module):
     def _init_weights(m):
         if isinstance(m, Conv2d):
-            torch.nn.init.kaiming_uniform_(m.weight, nonlinearity='relu',
-                                           mode='fan_in')
+            torch.nn.init.uniform_(m.weight, -0.01, 0.01)
         try:
             torch.nn.init.zeros_(m.bias)
         except AttributeError:
