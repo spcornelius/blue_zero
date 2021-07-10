@@ -3,7 +3,8 @@ from typing import Union, Tuple
 
 import torch
 from torch.nn import Conv2d, ModuleList, BatchNorm2d
-from torch.nn.functional import relu
+from torch.nn.functional import relu, leaky_relu
+from functools import partial
 
 from blue_zero.qnet.base import QNet
 
@@ -41,25 +42,36 @@ class SimpleQNet(QNet, id='simple'):
                                   kernel_size=(1, 1),
                                   bias=self.bias)
 
-        self.theta3 = Conv2d(4*self.num_feat, self.num_feat,
+        self.theta3 = Conv2d(2*self.num_feat, 1,
                              kernel_size=(1, 1),
                              bias=self.bias)
-        self.theta1 = Conv2d(3 * self.num_feat, 3*self.num_feat,
+        self.theta1 = Conv2d(3 * self.num_feat, self.num_feat,
                              kernel_size=(1, 1),
                              bias=self.bias)
         self.theta2 = Conv2d(self.num_feat, self.num_feat,
                              kernel_size=(1, 1),
                              bias=self.bias)
-        self.theta4 = Conv2d(self.num_feat, 1,
-                             kernel_size=(1, 1),
-                             bias=self.bias)
+
+        # self.theta1 = Conv2d(self.num_feat, 1,
+        #                      kernel_size=(1, 1),
+        #                      bias=self.bias)
+        # self.theta4 = Conv2d(self.num_feat, 1,
+        #                      kernel_size=(1, 1),
+        #                      bias=self.bias)
 
     def q(self, s: torch.Tensor):
         batch_size, _, h, w = s.shape
 
+        # relu = partial(leaky_relu, negative_slope=0.1)
+
         x = relu(self.embed_input(s))
+        #y = torch.amax(x, dim=(2, 3), keepdim=True).expand(-1, -1, h, w)
+        #x = torch.cat((x, y), dim=1)
 
         for k in range(self.depth):
+            # y = torch.amax(x, dim=(2, 3), keepdim=True).expand(-1, -1, h, w)
+            # z = torch.cat((x, y), dim=1)
+            # x = x + relu(self.convs[k](z))
             x = x + relu(self.convs[k](x))
 
         # representation of action (a_rep)
@@ -71,9 +83,15 @@ class SimpleQNet(QNet, id='simple'):
         sum_ = h * avg
         s_rep = torch.cat((avg, max_, sum_), dim=1)
 
-        q = self.theta4(relu(self.theta3(
+        # q = self.theta4(relu(self.theta3(
+        #     relu(torch.cat((self.theta1(s_rep).expand(-1, -1, h, w),
+        #                     self.theta2(a_rep)), dim=1))
+        # )))
+
+        q = self.theta3(
             relu(torch.cat((self.theta1(s_rep).expand(-1, -1, h, w),
                             self.theta2(a_rep)), dim=1))
-        )))
+        )
+        # q = self.theta1(x)
 
         return q.squeeze()
