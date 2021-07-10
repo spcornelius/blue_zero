@@ -184,6 +184,10 @@ class Trainer(object):
         """
         s_prev, a, s, r, terminal, dt = self.memory.sample(self.p.batch_size)
 
+        # if self.epoch == 500:
+        #     import ipdb
+        #     ipdb.set_trace()
+
         # get q estimate using POLICY net
         q_prev = self.policy_net(s_prev, a=a)
 
@@ -197,7 +201,7 @@ class Trainer(object):
 
         # update weights
         self.optimizer.zero_grad()
-        loss = self.loss_func(q + r, q_prev)
+        loss = self.loss_func((self.p.gamma ** dt) * q + r, q_prev)
         loss.backward()
         if self.p.clip_gradients:
             clip_grad_norm_(self.policy_net.parameters(), self.p.max_grad)
