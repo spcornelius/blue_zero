@@ -144,7 +144,8 @@ class Trainer(object):
             # snapshot network *before* adjusting weights
             try:
                 if self.epoch % p.snapshot_freq == 0:
-                    self.snapshots[self.epoch] = deepcopy(self.policy_net)
+                    self.snapshots[self.epoch] = \
+                        deepcopy(self.policy_net.state_dict())
             except ZeroDivisionError:
                 pass
 
@@ -165,7 +166,7 @@ class Trainer(object):
 
             self.epoch += 1
 
-        return self.policy_net, self.snapshots, self.losses
+        return self.policy_net.state_dict(), self.snapshots, self.losses
 
     def _soft_update_target(self) -> None:
         tau = self.p.soft_update_rate
