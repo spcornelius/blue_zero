@@ -5,7 +5,7 @@ from typing import Tuple
 import torch
 import numpy as np
 
-from blue_zero.env.base import BlueEnv
+from blue_zero.env.base import BlueMode
 
 __all__ = []
 __all__.extend([
@@ -38,7 +38,7 @@ class NStepReplayMemory(object):
     def __len__(self):
         return len(self.buffer)
 
-    def store(self, env: BlueEnv, gamma: float = 1.0) -> None:
+    def store(self, env: BlueMode, gamma: float = 1.0) -> None:
         """ Memorize all n-step transitions in a terminal environment.
 
         Args:

@@ -2,7 +2,7 @@ import numpy as np
 
 from blue_zero.clusters import find_clusters
 from blue_zero.config import Status
-from blue_zero.env.base import BlueEnv
+from blue_zero.env.base import BlueMode
 
 __all__ = []
 __all__.extend([
@@ -10,7 +10,7 @@ __all__.extend([
 ])
 
 
-class BlueMode3(BlueEnv, id=3):
+class BlueMode3(BlueMode, id=3):
 
     def __init__(self, *args, direction: str = 'horizontal', **kwargs):
         direction = direction.lower()

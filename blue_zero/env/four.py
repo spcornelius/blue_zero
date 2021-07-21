@@ -3,7 +3,7 @@ from scipy.signal import convolve2d
 
 from blue_zero.clusters import find_clusters
 from blue_zero.config import Status
-from blue_zero.env.base import BlueEnv
+from blue_zero.env.base import BlueMode
 
 __all__ = []
 __all__.extend([
@@ -11,7 +11,7 @@ __all__.extend([
 ])
 
 
-class BlueMode4(BlueEnv, id=4):
+class BlueMode4(BlueMode, id=4):
     """ This is the noodle mode.
     A component turns blue if the ratio of black contacts to size
     drops below K (the noodle dimension) """

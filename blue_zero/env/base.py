@@ -10,13 +10,13 @@ import blue_zero.util as util
 
 __all__ = []
 __all__.extend([
-    'BlueEnv', 'mode_registry'
+    'BlueMode', 'mode_registry'
 ])
 
 mode_registry = {}
 
 
-class BlueEnv(Env):
+class BlueMode(Env):
 
     def __init__(self, state: '2D array_like',
                  show_gui: bool = False,
