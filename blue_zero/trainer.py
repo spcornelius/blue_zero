@@ -92,7 +92,6 @@ class Trainer(object):
         self.play_pbar.clear()
         self.validate_pbar.clear()
 
-        self.losses = {}
         self.snapshots = {}
 
     @property
@@ -141,7 +140,7 @@ class Trainer(object):
                 self.status_pbar.postfix[1] = perf
                 self.status_pbar.refresh()
 
-            # snapshot network *before* adjusting weights
+            # snapshot the network *before* adjusting weights
             try:
                 if self.epoch % p.snapshot_freq == 0:
                     self.snapshots[self.epoch] = \
@@ -154,8 +153,6 @@ class Trainer(object):
             self.train_pbar.update(1)
             self.train_pbar.refresh()
 
-            self.losses[self.epoch] = loss
-
             # update target network from policy network if necessary, using
             # the specified approach
             if p.target_update_mode == 'soft':
@@ -166,7 +163,7 @@ class Trainer(object):
 
             self.epoch += 1
 
-        return self.policy_net.state_dict(), self.snapshots, self.losses
+        return self.policy_net.state_dict(), self.snapshots
 
     def _soft_update_target(self) -> None:
         tau = self.p.soft_update_rate
@@ -184,10 +181,6 @@ class Trainer(object):
             from replay memory and performing stochastic gradient descent.
         """
         s_prev, a, s, r, terminal, dt = self.memory.sample(self.p.batch_size)
-
-        # if self.epoch == 500:
-        #     import ipdb
-        #     ipdb.set_trace()
 
         # get q estimate using POLICY net
         q_prev = self.policy_net(s_prev, a=a)

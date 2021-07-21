@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pickle as pkl
+import gzip
 import torch
 from simple_parsing import ArgumentParser, field
 
@@ -34,6 +35,9 @@ class Options:
     # device to train on
     device: str = 'cpu'
 
+    # past training results file to initialize network
+    hot_start: Path = field(default=None, required=False)
+
     # random seed
     seed: int = field(alias='-s', default=None, required=False)
 
@@ -54,7 +58,8 @@ def load_envs(board_file, rotate=False, **kwargs):
 
 
 def main(config_file: Path, train_file: Path, validation_file: Path,
-         output_file: Path, device: str = 'cpu', seed: int = None):
+         output_file: Path, device: str = 'cpu', hot_start: Path = None,
+         seed: int = None):
     if seed is not None:
         util.set_seed(seed)
 
@@ -64,17 +69,23 @@ def main(config_file: Path, train_file: Path, validation_file: Path,
     validation_set = load_envs(validation_file, **params.mode)
 
     net = QNet.create(**params.qnet)
-    util.init_weights(net)
+
+    if hot_start is None:
+        util.init_weights(net)
+    else:
+        with gzip.open(hot_start, "rb") as f:
+            data = pkl.load(f)
+        net.load_state_dict(data["final_state"])
+
     memory = NStepReplayMemory(**params.replay, device=device)
     trainer = Trainer(net, train_set, validation_set, memory,
                       params.training, device=device)
-    trained_net, snapshots, losses = trainer.train()
+    final_state, snapshots = trainer.train()
 
-    data = dict(trained_net=trained_net, snapshots=snapshots, losses=losses)
-    data['trained_net'] = trained_net
+    data = dict(final_state, snapshots=snapshots)
+    data['final_state'] = final_state
     data['snapshots'] = snapshots
-    data['losses'] = losses
-    with open(output_file, "wb") as f:
+    with gzip.open(output_file, "wb") as f:
         pkl.dump(data, f)
 
 
