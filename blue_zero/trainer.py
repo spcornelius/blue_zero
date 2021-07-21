@@ -8,7 +8,7 @@ from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 
 from blue_zero.agent import QAgent, EpsGreedyQAgent, SoftMaxQAgent
-from blue_zero.mode import BlueEnv
+from blue_zero.mode import BlueMode
 from blue_zero.params import TrainParams
 from blue_zero.qnet import QNet
 from blue_zero.replay import NStepReplayMemory
@@ -38,8 +38,8 @@ class Trainer(object):
         with a linear decay in epsilon. """
 
     def __init__(self, net: QNet,
-                 train_set: Iterable[BlueEnv],
-                 validation_set: Iterable[BlueEnv],
+                 train_set: Iterable[BlueMode],
+                 validation_set: Iterable[BlueMode],
                  memory: NStepReplayMemory,
                  p: TrainParams,
                  device='cpu'):
@@ -204,7 +204,7 @@ class Trainer(object):
         return loss.detach()
 
     def play(self,
-             envs: Iterable[BlueEnv],
+             envs: Iterable[BlueMode],
              pbar: tqdm = None,
              greedy: bool = False,
              memorize: bool = False):

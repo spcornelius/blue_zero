@@ -7,7 +7,7 @@ from torch.nn.functional import softmax
 from more_itertools import chunked
 from tqdm import tqdm
 
-from blue_zero.mode import BlueEnv
+from blue_zero.mode import BlueMode
 from blue_zero.qnet import QNet
 
 __all__ = []
@@ -56,7 +56,7 @@ class QAgent(Agent):
 
         return (a, q) if return_q else a
 
-    def play(self, envs: Iterable[BlueEnv],
+    def play(self, envs: Iterable[BlueMode],
              batch_size: int = None,
              pbar: Union[bool, tqdm] = False) -> None:
 

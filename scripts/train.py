@@ -8,7 +8,7 @@ import torch
 from simple_parsing import ArgumentParser, field
 
 import blue_zero.util as util
-from blue_zero.mode import BlueEnv
+from blue_zero.mode import BlueMode
 from blue_zero.params import HyperParams
 from blue_zero.qnet.base import QNet
 from blue_zero.trainer import Trainer
@@ -53,7 +53,7 @@ def load_envs(board_file, rotate=False, **kwargs):
     else:
         k_max = 1
 
-    return [BlueEnv.create(board=rot(board, k), **kwargs) for board in boards
+    return [BlueMode.create(board=rot(board, k), **kwargs) for board in boards
             for k in range(0, k_max)]
 
 

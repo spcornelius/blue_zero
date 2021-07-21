@@ -72,7 +72,7 @@ class BlueMode(Env):
     def __init_subclass__(cls, id: str, **kwargs):
         if id in mode_registry:
             raise TypeError(
-                f"There is already a subclass of BlueEnv registered with "
+                f"There is already a subclass of BlueMode registered with "
                 f"id {id}.")
         cls._id = id
         mode_registry[id] = cls
@@ -84,7 +84,7 @@ class BlueMode(Env):
             return mode_registry[id](board, **kwargs)
         except KeyError:
             raise ValueError(
-                f"Can't find a subclass of BlueEnv with id '{id}'.")
+                f"Can't find a subclass of BlueMode with id '{id}'.")
 
     @classmethod
     def from_random(cls, size: tuple, p: float, **kwargs):

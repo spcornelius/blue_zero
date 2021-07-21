@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 from pathlib import Path
 from blue_zero.config import Status
-from blue_zero.mode import BlueEnv, mode_registry
+from blue_zero.mode import BlueMode, mode_registry
 
 
 parser = argparse.ArgumentParser()
@@ -40,7 +40,7 @@ def gen_random(n: int, p_min: float, p_max: float, mode: str,
         board[np.random.uniform(size=(n, n)) < p] = Status.alive
 
         # only retain states that aren't already terminal
-        env = BlueEnv.create(mode, board, **kwargs)
+        env = BlueMode.create(mode, board, **kwargs)
         if env.done:
             continue
         boards.append(board)
