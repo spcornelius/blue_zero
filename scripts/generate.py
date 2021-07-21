@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 from pathlib import Path
 from blue_zero.config import Status
-from blue_zero.env import BlueEnv, mode_registry
+from blue_zero.mode import BlueEnv, mode_registry
 
 
 parser = argparse.ArgumentParser()

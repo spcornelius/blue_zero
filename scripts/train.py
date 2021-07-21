@@ -8,7 +8,7 @@ import torch
 from simple_parsing import ArgumentParser, field
 
 import blue_zero.util as util
-from blue_zero.env import BlueEnv
+from blue_zero.mode import BlueEnv
 from blue_zero.params import HyperParams
 from blue_zero.qnet.base import QNet
 from blue_zero.trainer import Trainer

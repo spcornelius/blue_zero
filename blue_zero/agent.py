@@ -7,7 +7,7 @@ from torch.nn.functional import softmax
 from more_itertools import chunked
 from tqdm import tqdm
 
-from blue_zero.env import BlueEnv
+from blue_zero.mode import BlueEnv
 from blue_zero.qnet import QNet
 
 __all__ = []

@@ -3,7 +3,7 @@ from scipy.signal import convolve2d
 
 from blue_zero.clusters import find_clusters
 from blue_zero.config import Status
-from blue_zero.env.base import BlueMode
+from blue_zero.mode.base import BlueMode
 
 __all__ = []
 __all__.extend([

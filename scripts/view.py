@@ -7,9 +7,9 @@ from pathlib import Path
 from simple_parsing import ArgumentParser, field
 
 from blue_zero.agent import QAgent
-from blue_zero.env import ModeOptions
+from blue_zero.mode import ModeOptions
 from blue_zero.qnet.base import QNet
-from blue_zero.env.util import env_cls
+from blue_zero.mode.util import env_cls
 
 
 @dataclass

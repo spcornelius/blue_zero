@@ -5,7 +5,7 @@ from typing import Tuple
 import torch
 import numpy as np
 
-from blue_zero.env.base import BlueMode
+from blue_zero.mode.base import BlueMode
 
 __all__ = []
 __all__.extend([
@@ -60,7 +60,7 @@ class NStepReplayMemory(object):
         states = [torchify(s, torch.float32) for s in env.states]
         states.append(torchify(env.state, torch.float32))
         actions = [torchify(a, torch.long) for a in env.actions]
-        # cum_rewards = np.cumsum([0.0] + [r*gamma**k for k, r in enumerate(env.rewards)])
+        # cum_rewards = np.cumsum([0.0] + [r*gamma**k for k, r in enumerate(mode.rewards)])
         # cum_rewards = (cum_rewards - np.mean(cum_rewards)) / np.std(cum_rewards)
 
         for i_prev in range(0, env.steps_taken):

@@ -1,5 +1,5 @@
 import blue_zero.replay
-import blue_zero.env
+import blue_zero.mode
 import blue_zero.agent
 import blue_zero.qnet
 import blue_zero.params

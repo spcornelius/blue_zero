@@ -8,7 +8,7 @@ from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 
 from blue_zero.agent import QAgent, EpsGreedyQAgent, SoftMaxQAgent
-from blue_zero.env import BlueEnv
+from blue_zero.mode import BlueEnv
 from blue_zero.params import TrainParams
 from blue_zero.qnet import QNet
 from blue_zero.replay import NStepReplayMemory

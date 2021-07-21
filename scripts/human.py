@@ -3,7 +3,7 @@ from dataclasses import dataclass, asdict
 
 import pygame
 from simple_parsing import ArgumentParser, field
-from blue_zero.env import mode_registry
+from blue_zero.mode import mode_registry
 from blue_zero.config import Status
 
 
