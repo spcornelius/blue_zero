@@ -18,7 +18,7 @@ mode_registry = {}
 
 class BlueMode(Env):
 
-    def __init__(self, state: '2D array_like',
+    def __init__(self, state: '2D array_like', *,
                  show_gui: bool = False,
                  screen_size: Tuple[int, int] = cfg.screen_size,
                  reward_norm: Union[str, float] = None,
