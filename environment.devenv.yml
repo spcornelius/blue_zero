@@ -22,5 +22,6 @@ dependencies:
       - gym
       - ipdb
       - pygame >=2.0.0
+      - pygame_widgets
       - simple-parsing
       - wurlitzer

@@ -4,9 +4,15 @@ import numpy as np
 import contextlib
 with contextlib.redirect_stdout(None):
     import pygame
+from pygame_widgets import ButtonArray
 from torch import Tensor
 
 import blue_zero.config as cfg
+
+
+__all__ = ["BlueGUI"]
+
+font_size = [100, 100]
 
 
 class BlueGUI(object):
@@ -22,6 +28,27 @@ class BlueGUI(object):
         # Create a background
         self.background = pygame.Surface(self.screen.get_size()).convert()
         self.background.fill((255, 255, 255))
+
+        # haze for game over
+        self.haze = pygame.Surface(self.screen.get_size()).convert()
+        self.haze.fill((255, 255, 255))
+        self.haze.set_alpha(230)
+
+        # buttons for game over
+        button_w = screen_w / 3
+        button_h = screen_h / 3
+
+        button_x = screen_w / 3
+        button_y = screen_h / 3
+
+        self.buttons = ButtonArray(self.screen,
+                                   button_x, button_y, button_w, button_h,
+                                   (1, 2),
+                                   fontSizes=[100, 100],
+                                   inactiveColours=[(200, 200, 200)]*2,
+                                   colour=(0, 0, 0, 0),
+                                   separationThickness=10,
+                                   border=10, texts=('Play Again', 'Quit'))
 
         # Create a layer for the maze
         self.board_layer = pygame.Surface(
@@ -61,3 +88,8 @@ class BlueGUI(object):
         for ij, r in self.rects.items():
             if r.collidepoint(pos):
                 return ij
+
+    def draw_game_over(self) -> bool:
+        self.screen.blit(self.haze, (0, 0))
+        self.buttons.draw()
+        pygame.display.flip()
