@@ -42,10 +42,10 @@ class SimpleQNet(QNet, id='simple'):
                                   kernel_size=(1, 1),
                                   bias=self.bias)
 
-        self.theta3 = Conv2d(2*self.num_feat, 1,
+        self.theta3 = Conv2d(2*self.num_feat, self.num_feat,
                              kernel_size=(1, 1),
                              bias=self.bias)
-        self.theta1 = Conv2d(3 * self.num_feat, self.num_feat,
+        self.theta1 = Conv2d(4 * self.num_feat, self.num_feat,
                              kernel_size=(1, 1),
                              bias=self.bias)
         self.theta2 = Conv2d(self.num_feat, self.num_feat,
@@ -55,9 +55,9 @@ class SimpleQNet(QNet, id='simple'):
         # self.theta1 = Conv2d(self.num_feat, 1,
         #                      kernel_size=(1, 1),
         #                      bias=self.bias)
-        # self.theta4 = Conv2d(self.num_feat, 1,
-        #                      kernel_size=(1, 1),
-        #                      bias=self.bias)
+        self.theta4 = Conv2d(self.num_feat, 1,
+                             kernel_size=(1, 1),
+                             bias=self.bias)
 
     def q(self, s: torch.Tensor):
         batch_size, _, h, w = s.shape
@@ -79,19 +79,20 @@ class SimpleQNet(QNet, id='simple'):
 
         # global (pooled) features, representing board state (s_rep)
         avg = torch.mean(a_rep, dim=(2, 3), keepdim=True)
+        min_ = torch.amin(a_rep, dim=(2, 3), keepdim=True)
         max_ = torch.amax(a_rep, dim=(2, 3), keepdim=True)
         sum_ = h * avg
-        s_rep = torch.cat((avg, max_, sum_), dim=1)
+        s_rep = torch.cat((avg, max_, min_, sum_), dim=1)
 
         # q = self.theta4(relu(self.theta3(
         #     relu(torch.cat((self.theta1(s_rep).expand(-1, -1, h, w),
         #                     self.theta2(a_rep)), dim=1))
         # )))
 
-        q = self.theta3(
+        q = self.theta4(relu(self.theta3(
             relu(torch.cat((self.theta1(s_rep).expand(-1, -1, h, w),
                             self.theta2(a_rep)), dim=1))
-        )
+        )))
         # q = self.theta1(x)
 
         return q.squeeze()
