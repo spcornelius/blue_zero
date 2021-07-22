@@ -1,20 +1,22 @@
+import gzip
+import pickle as pkl
 import sys
 from dataclasses import dataclass, asdict
-from time import sleep
+from pathlib import Path
 
 import pygame
-from pathlib import Path
+import torch
 from simple_parsing import ArgumentParser, field
 
 from blue_zero.agent import QAgent
-from blue_zero.mode import ModeOptions
-from blue_zero.qnet.base import QNet
-from blue_zero.mode.util import env_cls
+from blue_zero.config import Status
+from blue_zero.mode import mode_registry
+from blue_zero.qnet import QNet
 
 
 @dataclass
 class Options:
-    # .pt file containing a trained model
+    # .pkl.gz file containing training results
     file: Path = field(alias='-f', required=True)
 
     # size of board to play on
@@ -26,15 +28,16 @@ class Options:
     # game mode
     mode: int = field(required=True)
 
-    # time delay between taking moves
-    pause: float = 0.2
-
 
 def main(file: Path, n: int, p: float, mode: int,
-         pause: float = 0.2, **kwargs):
-    net = QNet.load(file)
+        **kwargs):
+    with gzip.open(file, "rb") as f:
+        data = pkl.load(f)
+    net = QNet.create(**data['qnet_params'])
+    net.load_state_dict(data['final_state'])
     agent = QAgent(net)
-    env = env_cls[mode].from_random((n, n), p, show_gui=True, **kwargs)
+    env = mode_registry[mode].from_random((n, n), p, show_gui=True, **kwargs)
+    gui = env.gui
 
     started = False
     print("Click anywhere to start playing.")
@@ -42,24 +45,18 @@ def main(file: Path, n: int, p: float, mode: int,
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit(0)
-            elif event.type == pygame.MOUSEBUTTONDOWN and not started:
-                print("Playing!")
-                started = True
-        if not started:
-            continue
-
-        if not env.done:
-            a = agent.get_action(env.state, eps=0.0)
-            env.step(a)
-            sleep(pause)
+            elif event.type == pygame.MOUSEBUTTONDOWN and not env.done:
+                a = agent.get_action(env.state)
+                if a is not None:
+                    i, j = a
+                    if env.state[Status.alive, i, j]:
+                        env.step(a)
 
 
 if __name__ == "__main__":
     parser = ArgumentParser(add_dest_to_option_strings=False,
                             add_option_string_dash_variants=True)
     parser.add_arguments(Options, "options")
-    parser.add_arguments(ModeOptions, "mode_options")
     args = parser.parse_args()
     kwargs = asdict(args.options)
-    kwargs.update(args.mode_options.get_kwargs(args.options.mode))
     main(**kwargs)
