@@ -55,15 +55,6 @@ class QNet(Module, metaclass=abc.ABCMeta):
                      qnet_params=qnet_params)
         torch.save(state, file)
 
-    @staticmethod
-    def load(file: Union[str, Path]):
-        data = torch.load(file)
-        qnet_params = data['qnet_params']
-        id_ = data.pop('id')
-        new_net = QNet.create(id_, **qnet_params)
-        new_net.load_state_dict(data['state_dict'])
-        return new_net
-
     @abc.abstractmethod
     def q(self, s: torch.Tensor) -> torch.Tensor:
         pass
@@ -75,6 +66,8 @@ class QNet(Module, metaclass=abc.ABCMeta):
     def forward(self, s: Union[torch.Tensor, np.ndarray],
                 a: Union[torch.Tensor,
                          tuple, List[tuple]] = None) -> torch.Tensor:
+        if isinstance(s, np.ndarray):
+            s = torch.from_numpy(s).to(dtype=torch.float32)
         board_size = s.shape[-2:]
         h, w = board_size
 
