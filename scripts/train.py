@@ -30,7 +30,7 @@ class Options:
     # .npy file containing validation boards
     validation_file: Path = field(alias='-v', required=True)
 
-    # where to save final trained model
+    # where to save training results
     output_file: Path = field(alias='-o', required=True)
 
     # device to train on
