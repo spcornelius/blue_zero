@@ -1,6 +1,6 @@
 qnet:
   id: 'simple'
-  depth: 5
+  depth: 10
   kernel_size: 3
   num_feat: 32
   bias: true
@@ -12,16 +12,13 @@ replay:
   capacity: 1_000_000
   step_diff: 1
 training:
-  batch_size: 128
+  batch_size: 512
   max_epochs: 200_000
   anneal_epochs: 100_000
   exploration: softmax
   anneal: true
   T_max: 100.0
   T_min: 0.01
-  # exploration: eps_greedy
-  # eps_max: 1.0
-  # eps_min: 0.01
   gamma: 0.95
   clip_gradients: true
   max_grad: 1.0
