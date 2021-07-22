@@ -98,14 +98,20 @@ class Trainer(object):
     def eps(self) -> float:
         """ Current value of epsilon (random action probability). """
         e1, e2, t = self.p.eps_max, self.p.eps_min, self.p.anneal_epochs
-        return e2 + max(0.0, (e1 - e2) * (t - self.epoch) / t)
+        if self.p.anneal:
+            return e2 + max(0.0, (e1 - e2) * (t - self.epoch) / t)
+        else:
+            return e2
 
     @property
     def T(self) -> float:
         """ Current value of T (temperature for Boltzmann kernel). """
         p = self.p
         t = self.epoch
-        return p.T_min + np.exp(-t/p.anneal_epochs)*(p.T_max - p.T_min)
+        if p.anneal:
+            return p.T_min + np.exp(-t/p.anneal_epochs)*(p.T_max - p.T_min)
+        else:
+            return p.T_min
 
     def create_agent(self, greedy: bool = False):
         if greedy:

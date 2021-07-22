@@ -1,4 +1,5 @@
 from dataclasses import dataclass, asdict
+from warnings import warn
 from pathlib import Path
 
 import numpy as np
@@ -76,6 +77,11 @@ def main(config_file: Path, train_file: Path, validation_file: Path,
         with gzip.open(hot_start, "rb") as f:
             data = pkl.load(f)
         net.load_state_dict(data["final_state"])
+        if params.training.anneal:
+            warn(
+                "Hot start provided. Disabling exploration annealing "
+                "(training.anneal=False).")
+        params.training.anneal = False
 
     memory = NStepReplayMemory(**params.replay, device=device)
     trainer = Trainer(net, train_set, validation_set, memory,
@@ -85,6 +91,7 @@ def main(config_file: Path, train_file: Path, validation_file: Path,
     data = dict(final_state, snapshots=snapshots)
     data['final_state'] = final_state
     data['snapshots'] = snapshots
+    data['qnet_params'] = params.qnet
     with gzip.open(output_file, "wb") as f:
         pkl.dump(data, f)
 

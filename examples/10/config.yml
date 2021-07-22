@@ -3,12 +3,9 @@ qnet:
   depth: 5
   kernel_size: 3
   num_feat: 32
-  num_hidden: 32
   bias: true
-  batchnorm: false
 mode:
   id: 0
-  # blank = no normalization of rewards
   reward_norm: 'side_length'
   shape_rewards: false
 replay:
@@ -16,9 +13,10 @@ replay:
   step_diff: 1
 training:
   batch_size: 128
-  max_epochs: 1_000_000
-  anneal_epochs: 10_000
+  max_epochs: 200_000
+  anneal_epochs: 100_000
   exploration: softmax
+  anneal: true
   T_max: 100.0
   T_min: 0.01
   # exploration: eps_greedy
@@ -29,12 +27,12 @@ training:
   max_grad: 1.0
   num_burn_in: 100
   play_freq: 100
-  num_play: 10
-  validation_freq: 1000
+  num_play: 100
+  validation_freq: 100
   target_update_mode: hard
   soft_update_rate: 1.0e-5
   hard_update_freq: 1_000
-  snapshot_freq: 1000
+  snapshot_freq: 100
   optimizer:
     name: 'adam'
     lr: 1.0e-4

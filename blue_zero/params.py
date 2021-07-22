@@ -59,6 +59,10 @@ class TrainParams(Serializable):
     # exploration strategy
     exploration: str = choice('eps_greedy', 'softmax')
 
+    # if false, don't anneal exploration parameter from start to final
+    # value
+    anneal: bool = True
+
     # initial random move probability for greedy epsilon strategy
     eps_max: float = 1.0
 
