@@ -12,6 +12,7 @@ from blue_zero.agent import QAgent
 from blue_zero.config import Status
 from blue_zero.mode import mode_registry
 from blue_zero.qnet import QNet
+from blue_zero.gui import BlueGUI
 
 
 @dataclass
@@ -36,10 +37,9 @@ def main(file: Path, n: int, p: float, mode: int,
     net = QNet.create(**data['qnet_params'])
     net.load_state_dict(data['final_state'])
     agent = QAgent(net)
-    env = mode_registry[mode].from_random((n, n), p, show_gui=True, **kwargs)
-    gui = env.gui
+    gui = BlueGUI((n, n))
+    env = mode_registry[mode].from_random((n, n), p, gui=gui, **kwargs)
 
-    started = False
     print("Click anywhere to start playing.")
     while True:
         for event in pygame.event.get():

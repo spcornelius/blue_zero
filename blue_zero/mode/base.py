@@ -19,7 +19,7 @@ mode_registry = {}
 class BlueMode(Env):
 
     def __init__(self, state: '2D array_like', *,
-                 show_gui: bool = False,
+                 gui: BlueGUI = None,
                  screen_size: Tuple[int, int] = cfg.screen_size,
                  reward_norm: Union[str, float] = None,
                  shape_rewards: bool = False,
@@ -48,7 +48,7 @@ class BlueMode(Env):
             raise ValueError(
                 f"Unrecognized reward normalization strategy: {reward_norm}")
 
-        self.show_gui = show_gui
+        self.gui = gui
         self.shape_rewards = shape_rewards
         self._green_pct_init = self.state[Status.alive].mean()
 
@@ -60,10 +60,6 @@ class BlueMode(Env):
         # keep copy of initial state for resetting
         self._state_orig = self.state.copy()
         self._game_over = False
-
-        if self.show_gui:
-            self.gui = BlueGUI(self.state.shape[1:],
-                               screen_size=screen_size)
 
         self.update()
 
@@ -109,7 +105,7 @@ class BlueMode(Env):
         return np.argwhere(self.state[Status.alive, :, :])
 
     def update(self) -> None:
-        if self.show_gui:
+        if self.gui:
             self.render()
 
     def render(self, mode='human'):
