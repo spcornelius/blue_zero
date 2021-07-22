@@ -9,6 +9,8 @@ dist/
 
 *.npy
 *.npz
+*.pkl
+*.gz
 *.pt
 *.c
 *.so
