@@ -1,13 +1,12 @@
 import abc
 from dataclasses import dataclass, is_dataclass, asdict
+from pathlib import Path
 from typing import Union, List
 
 import numpy as np
 import torch
 from torch.nn import Module, Parameter
-from pathlib import Path
 
-import blue_zero.util as util
 from blue_zero.config import Status
 
 __all__ = ['QNet']
