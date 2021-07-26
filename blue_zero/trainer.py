@@ -93,6 +93,12 @@ class Trainer(object):
         self.validate_pbar.clear()
 
         self.snapshots = {}
+        snapshot_times = np.logspace(0, np.log10(self.p.max_epochs),
+                                     self.p.num_snapshots)
+        snapshot_times.dtype = int
+        snapshot_times = np.insert(snapshot_times, 0, 0)
+        self.snapshot_times = np.sort(np.unique(snapshot_times))
+
 
     @property
     def eps(self) -> float:
@@ -147,11 +153,14 @@ class Trainer(object):
                 self.status_pbar.refresh()
 
             # snapshot the network *before* adjusting weights
+
+            # idx of next scheduled snapshot time
+            i = np.searchsorted(self.snapshot_times, self.epoch)
             try:
-                if self.epoch % p.snapshot_freq == 0:
+                if self.epoch == self.snapshot_times[i]:
                     self.snapshots[self.epoch] = \
                         deepcopy(self.policy_net.state_dict())
-            except ZeroDivisionError:
+            except IndexError:
                 pass
 
             # do one fit iteration

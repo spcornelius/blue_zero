@@ -53,8 +53,9 @@ class TrainParams(Serializable):
     # method used to update target qnet from policy qnet
     target_update_mode: str = choice('hard', 'soft')
 
-    # how often to record network snapshots / losses
-    snapshot_freq: int = 0
+    # how many network snapshots to save (logarithmically spaced between
+    # 0 and max_epochs)
+    num_snapshots: int = 0
 
     # exploration strategy
     exploration: str = choice('eps_greedy', 'softmax')

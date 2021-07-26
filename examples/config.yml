@@ -13,7 +13,7 @@ replay:
   step_diff: 1
 training:
   batch_size: 512
-  max_epochs: 200_000
+  max_epochs: 1_000_000
   anneal_epochs: 100_000
   exploration: softmax
   anneal: true
@@ -24,12 +24,12 @@ training:
   max_grad: 1.0
   num_burn_in: 100
   play_freq: 100
-  num_play: 100
-  validation_freq: 100
+  num_play: 10
+  validation_freq: 1_000
   target_update_mode: hard
   soft_update_rate: 1.0e-5
   hard_update_freq: 1_000
-  snapshot_freq: 100
+  num_snapshots: 50
   optimizer:
     name: 'adam'
     lr: 1.0e-4
