@@ -2,7 +2,7 @@ qnet:
   id: 'simple'
   depth: 10
   kernel_size: 3
-  num_feat: 32
+  num_feat: 64
   bias: true
 mode:
   id: 0
@@ -12,7 +12,7 @@ replay:
   capacity: 1_000_000
   step_diff: 1
 training:
-  batch_size: 512
+  batch_size: 128
   max_epochs: 1_000_000
   anneal_epochs: 100_000
   exploration: softmax
@@ -29,7 +29,8 @@ training:
   target_update_mode: hard
   soft_update_rate: 1.0e-5
   hard_update_freq: 1_000
-  num_snapshots: 50
+  snapshot_all_before: 100
+  num_addl_snapshots: 900
   optimizer:
     name: 'adam'
     lr: 1.0e-4

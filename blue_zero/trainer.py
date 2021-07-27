@@ -43,15 +43,12 @@ class Trainer(object):
                  memory: NStepReplayMemory,
                  p: TrainParams,
                  device='cpu'):
-
-        super().__init__()
-
         self.policy_net = net
         self.policy_net.to(device)
         self.target_net = deepcopy(self.policy_net)
 
-        self.train_set = list(train_set)
-        self.validation_set = list(validation_set)
+        self.train_set = tuple(train_set)
+        self.validation_set = tuple(validation_set)
 
         self.memory = memory
 
@@ -59,16 +56,12 @@ class Trainer(object):
         opt_kwargs = p.optimizer
         opt_name = opt_kwargs.pop('name').lower()
         try:
-            Opt = optimizers[opt_name]
+            self.optimizer = optimizers[opt_name](weights, **opt_kwargs)
         except KeyError:
             raise ValueError(f"Unrecognized optimizer '{opt_name}'.")
-        self.optimizer = Opt(weights, **opt_kwargs)
         self.loss_func = torch.nn.SmoothL1Loss()
 
         self.epoch = 0
-        self.best_epoch = None
-        self.best_perf = np.inf
-        self.best_params = None
         self.p = p
         self.device = device
 
@@ -93,12 +86,24 @@ class Trainer(object):
         self.validate_pbar.clear()
 
         self.snapshots = {}
-        snapshot_times = np.logspace(0, np.log10(self.p.max_epochs),
-                                     self.p.num_snapshots)
-        snapshot_times.dtype = int
-        snapshot_times = np.insert(snapshot_times, 0, 0)
-        self.snapshot_times = np.sort(np.unique(snapshot_times))
+        self.snapshot_times = self._get_snapshot_times(p)
 
+    @staticmethod
+    def _get_snapshot_times(p: TrainParams):
+        t1 = np.arange(0, p.snapshot_all_before)
+        t2 = np.logspace(np.log10(p.snapshot_all_before),
+                         np.log10(p.max_epochs),
+                         p.num_addl_snapshots, dtype=np.int)
+        t = np.hstack((t1, t2))
+        t = np.insert(t, 0, 0)
+        return np.sort(np.unique(t))
+
+    def snapshot_if_required(self) -> None:
+        # idx of next scheduled snapshot time
+        i = np.searchsorted(self.snapshot_times, self.epoch)
+        t = self.snapshot_times[i]
+        if self.epoch == t:
+            self.snapshots[t] = deepcopy(self.policy_net.state_dict())
 
     @property
     def eps(self) -> float:
@@ -115,7 +120,7 @@ class Trainer(object):
         p = self.p
         t = self.epoch
         if p.anneal:
-            return p.T_min + np.exp(-t/p.anneal_epochs)*(p.T_max - p.T_min)
+            return p.T_min + np.exp(-t / p.anneal_epochs) * (p.T_max - p.T_min)
         else:
             return p.T_min
 
@@ -132,6 +137,11 @@ class Trainer(object):
             raise ValueError(
                 f"Unrecognized exploration strategy '{exploration}'.")
 
+    def update_status(self, loss, perf):
+        self.status_pbar.postfix[0] = loss
+        self.status_pbar.postfix[1] = perf
+        self.status_pbar.refresh()
+
     def train(self):
         p = self.p
 
@@ -143,42 +153,36 @@ class Trainer(object):
         self.train_pbar.refresh()
 
         while self.epoch < p.max_epochs:
+            # update target network from policy network if necessary, using
+            # the specified approach
+            self.update_target_if_required()
+
             if self.epoch % p.play_freq == 0:
                 self.rollout()
 
             if self.epoch % p.validation_freq == 0:
                 perf = self.validate()
-                self.status_pbar.postfix[0] = loss
-                self.status_pbar.postfix[1] = perf
-                self.status_pbar.refresh()
+                self.update_status(loss, perf)
 
-            # snapshot the network *before* adjusting weights
-
-            # idx of next scheduled snapshot time
-            i = np.searchsorted(self.snapshot_times, self.epoch)
-            try:
-                if self.epoch == self.snapshot_times[i]:
-                    self.snapshots[self.epoch] = \
-                        deepcopy(self.policy_net.state_dict())
-            except IndexError:
-                pass
+            # snapshot the network *before* adjusting weights (so that
+            # snapshot 0 is the virgin network prior to any training)
+            self.snapshot_if_required()
 
             # do one fit iteration
             loss = self.fit()
             self.train_pbar.update(1)
             self.train_pbar.refresh()
 
-            # update target network from policy network if necessary, using
-            # the specified approach
-            if p.target_update_mode == 'soft':
-                self._soft_update_target()
-            elif p.target_update_mode == 'hard' and \
-                    self.epoch % p.hard_update_freq == 0:
-                self._hard_update_target()
-
             self.epoch += 1
 
-        return self.policy_net.state_dict(), self.snapshots
+        return deepcopy(self.policy_net.state_dict()), self.snapshots
+
+    def update_target_if_required(self):
+        if self.p.target_update_mode == 'soft':
+            self._soft_update_target()
+        elif self.p.target_update_mode == 'hard' and \
+                self.epoch % self.p.hard_update_freq == 0:
+            self._hard_update_target()
 
     def _soft_update_target(self) -> None:
         tau = self.p.soft_update_rate
@@ -230,8 +234,7 @@ class Trainer(object):
         for e in envs:
             e.reset()
 
-        agent.play(envs, batch_size=self.p.batch_size,
-                   pbar=pbar)
+        agent.play(envs, batch_size=self.p.batch_size, pbar=pbar)
 
         if memorize:
             for e in envs:
@@ -260,7 +263,7 @@ class Trainer(object):
         self.play(envs, pbar=self.play_pbar, memorize=True)
         self.play_pbar.clear()
 
-    def validate(self):
+    def validate(self) -> float:
         """ Validate current policy net.
 
         Returns:
@@ -272,4 +275,5 @@ class Trainer(object):
         envs = self.play(self.validation_set, greedy=True,
                          pbar=self.validate_pbar)
         self.validate_pbar.clear()
-        return np.mean([e.sol_size for e in envs])
+
+        return np.mean([e.sol_size for e in envs]).item()
