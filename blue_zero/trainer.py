@@ -1,11 +1,10 @@
-from copy import deepcopy
-from typing import Iterable
-
 import numpy as np
 import torch
 import torch.optim as optim
+from copy import deepcopy
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
+from typing import Iterable
 
 from blue_zero.agent import QAgent, EpsGreedyQAgent, SoftMaxQAgent
 from blue_zero.mode import BlueMode
@@ -67,19 +66,22 @@ class Trainer(object):
 
         self.train_pbar = tqdm(total=p.max_epochs, position=0,
                                desc="Training", unit=" epochs",
-                               leave=False)
+                               leave=False, disable=None)
         self.status_pbar = tqdm(position=2, total=0,
                                 bar_format=f"{BOLD}Loss: {{postfix[0]:1.2e}}"
                                            f"  |  "
                                            f"Avg. moves to win: "
                                            f"{{postfix[1]:.2f}}{END}",
-                                postfix=[np.nan, np.nan])
+                                postfix=[np.nan, np.nan],
+                                disable=None)
         self.play_pbar = tqdm(total=p.num_play, position=1,
                               desc="    Playing", unit=" games",
-                              bar_format=pbar_format)
+                              bar_format=pbar_format,
+                              disable=None)
         self.validate_pbar = tqdm(total=len(self.validation_set), position=1,
                                   desc="    Validating", unit=" games",
-                                  bar_format=pbar_format, leave=False)
+                                  bar_format=pbar_format, leave=False,
+                                  disable=None)
         self.train_pbar.clear()
         self.status_pbar.clear()
         self.play_pbar.clear()
@@ -138,9 +140,10 @@ class Trainer(object):
                 f"Unrecognized exploration strategy '{exploration}'.")
 
     def update_status(self, loss, perf):
-        self.status_pbar.postfix[0] = loss
-        self.status_pbar.postfix[1] = perf
-        self.status_pbar.refresh()
+        if not self.status_pbar.disable:
+            self.status_pbar.postfix[0] = loss
+            self.status_pbar.postfix[1] = perf
+            self.status_pbar.refresh()
 
     def train(self):
         p = self.p
@@ -246,7 +249,8 @@ class Trainer(object):
     def burn_in(self):
         pbar = tqdm(total=self.p.num_burn_in, position=0,
                     desc="Burning in", unit=" games",
-                    bar_format=pbar_format, leave=False)
+                    bar_format=pbar_format, leave=False,
+                    disable=None)
         envs = np.random.choice(self.train_set, self.p.num_burn_in,
                                 replace=False)
         self.policy_net.train()
