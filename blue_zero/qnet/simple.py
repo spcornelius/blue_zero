@@ -60,10 +60,10 @@ class SimpleQNet(QNet, id='simple'):
 
         # relu = partial(leaky_relu, negative_slope=0.1)
 
-        x = leaky_relu(self.embed_input(s))
+        x = self.embed_input(s)
 
         for k in range(self.depth):
-            x = x + leaky_relu(self.convs[k](x))
+            x = x + self.convs[k](leaky_relu(x))
 
         # representation of action (a_rep)
         a_rep = x
