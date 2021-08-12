@@ -11,8 +11,9 @@ pkg_name = 'blue_zero'
 author = "Sean P. Cornelius"
 author_email = "spcornelius@gmail.com"
 
-install_requires = ['argparse', 'contextlib2',
-                    'numpy', 'pygame', 'torch', 'tqdm', 'gym']
+install_requires = ['argparse', 'contextlib2', 'wurlitzer',
+                    'numpy', 'pygame', 'torch', 'tqdm', 'gym',
+                    'pygame_widgets']
 
 args = sys.argv[1:]
 
@@ -23,8 +24,9 @@ if args.count("build_ext") > 0 and args.count("--inplace") == 0:
 clusters_ext = Extension("blue_zero.clusters.clusters",
                          ["blue_zero/clusters/clusters.pyx"],
                          include_dirs=[np.get_include()],
-                         extra_compile_args=['-O3']
+                         extra_compile_args=['-O3'],
                          )
+clusters_ext.cython_directives = {'language_level': "3"}
 
 if __name__ == '__main__':
     setup(

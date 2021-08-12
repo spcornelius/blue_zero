@@ -1,12 +1,18 @@
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 import contextlib
 with contextlib.redirect_stdout(None):
     import pygame
+from pygame_widgets import ButtonArray
 from torch import Tensor
 
 import blue_zero.config as cfg
+
+
+__all__ = ["BlueGUI"]
+
+font_size = [100, 100]
 
 
 class BlueGUI(object):
@@ -23,6 +29,27 @@ class BlueGUI(object):
         self.background = pygame.Surface(self.screen.get_size()).convert()
         self.background.fill((255, 255, 255))
 
+        # haze for game over
+        self.haze = pygame.Surface(self.screen.get_size()).convert()
+        self.haze.fill((255, 255, 255))
+        self.haze.set_alpha(230)
+
+        # buttons for game over
+        button_w = screen_w / 3
+        button_h = screen_h / 3
+
+        button_x = screen_w / 3
+        button_y = screen_h / 3
+
+        self.buttons = ButtonArray(self.screen,
+                                   button_x, button_y, button_w, button_h,
+                                   (1, 2),
+                                   fontSizes=[100, 100],
+                                   inactiveColours=[(200, 200, 200)]*2,
+                                   colour=(0, 0, 0, 0),
+                                   separationThickness=10,
+                                   border=10, texts=('Play Again', 'Quit'))
+
         # Create a layer for the maze
         self.board_layer = pygame.Surface(
             self.screen.get_size()).convert_alpha()
@@ -35,14 +62,14 @@ class BlueGUI(object):
         self.pad_h = cfg.pad_frac * screen_h / (self.board_h + 1)
         self.rects = dict()
 
-    def draw_board(self, state: Tensor) -> None:
-        board_h, board_w = state.shape
+    def draw_board(self, state: Union[Tensor, np.ndarray]) -> None:
+        board_h, board_w = state.shape[1:]
         assert board_h == self.board_h
         assert board_w == self.board_w
 
         self.rects = dict()
         for status in cfg.Status:
-            for ij in np.argwhere(state == status):
+            for ij in np.argwhere(state[status]):
                 i, j = tuple(ij)
                 left = self.cell_w * j + self.pad_w * (j + 1)
                 top = self.cell_h * i + self.pad_h * (i + 1)
@@ -61,3 +88,8 @@ class BlueGUI(object):
         for ij, r in self.rects.items():
             if r.collidepoint(pos):
                 return ij
+
+    def draw_game_over(self) -> bool:
+        self.screen.blit(self.haze, (0, 0))
+        self.buttons.draw()
+        pygame.display.flip()

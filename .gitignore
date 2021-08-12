@@ -8,6 +8,9 @@ dist/
 **/__pycache__
 
 *.npy
+*.npz
+*.pkl
+*.gz
 *.pt
 *.c
 *.so

@@ -1,10 +1,11 @@
 import random
-from collections import namedtuple, deque
+from collections import namedtuple
 from typing import Tuple
 
 import torch
+import numpy as np
 
-from blue_zero.env.base import BlueBase
+from blue_zero.mode.base import BlueMode
 
 __all__ = []
 __all__.extend([
@@ -12,53 +13,78 @@ __all__.extend([
     'NStepReplayMemory',
 ])
 
-Transition = namedtuple('Transition', ('s_prev', 'a', 's', 'dr', 'terminal'))
+Transition = namedtuple('Transition',
+                        ('s_prev', 'a', 's', 'dr', 'terminal', 'dt'))
 
 
 class NStepReplayMemory(object):
     """ Replay buffer that memorizes n-step transitions an a reinforcement
     learning environment. """
 
-    def __init__(self, capacity: int, step_size: int, device: str = 'cpu'):
+    def __init__(self, capacity: int, step_diff: int = 1,
+                 device: str = 'cpu'):
         """
         Args:
             capacity: Maximum number of `Transition` objects to store in
                 replay buffer before overwriting the earliest.
-            step_size: Positive integer giving the 'N' in 'NStep'.
-            device: Device to return samples on.
+            step_diff: Positive integer corresponding to the 'N' in 'NStep'.
         """
         self.capacity = capacity
-        self.step_size = step_size
+        self.step_diff = step_diff
+        self.buffer = []
+        self.pos = 0
         self.device = device
-        self._memory = deque(maxlen=capacity)
 
-    def store(self, e: BlueBase) -> None:
+    def __len__(self):
+        return len(self.buffer)
+
+    def store(self, env: BlueMode, gamma: float = 1.0) -> None:
         """ Memorize all n-step transitions in a terminal environment.
 
         Args:
-            e: A terminal environment.
+            env: A terminal environment.
+            gamma: Discount factor for rewards.
         """
-        assert e.done
-        for i in range(0, e.steps_taken):
-            i_next = i + self.step_size
-            a = torch.from_numpy(e.actions[i]).to(device=self.device)
-            r_prev = e.rewards[i]
-            s_prev = torch.from_numpy(e.states[i]).to(
-                device=self.device).float()
-            if i_next >= e.steps_taken:
-                # final state
-                s, r, terminal = e.state.copy(), e.r, True
-            else:
-                # non-final state
-                s, r, terminal = e.states[i_next], e.rewards[i_next], False
-            s = torch.from_numpy(s).to(device=self.device).float()
-            self._memory.append(Transition(s_prev, a, s, r - r_prev, terminal))
+        assert env.done
+        if env.steps_taken == 0:
+            return
 
-    def sample(self, batch_size: int) -> Tuple:
+        # convert a numpy array in the environment to a torch tensor
+        # for storage in replay buffer
+        def torchify(x, dtype):
+            return torch.from_numpy(x).to(device=self.device, dtype=dtype)
+
+        # Convert environment states (numpy arrays) to tensors all at once.
+        # If state appears multiple times in replay, should be stored as
+        # references rather than multiple copies.
+        states = [torchify(s, torch.float32) for s in env.states]
+        states.append(torchify(env.state, torch.float32))
+        actions = [torchify(a, torch.long) for a in env.actions]
+        # cum_rewards = np.cumsum([0.0] + [r*gamma**k for k, r in enumerate(mode.rewards)])
+        # cum_rewards = (cum_rewards - np.mean(cum_rewards)) / np.std(cum_rewards)
+
+        for i_prev in range(0, env.steps_taken):
+            a = actions[i_prev]
+            s_prev = states[i_prev]
+
+            i = min(i_prev + self.step_diff, env.steps_taken)
+            s = states[i]
+            r = sum(gamma**k * env.rewards[k] for k in range(i-i_prev))
+            # r = cum_rewards[i] - cum_rewards[i_prev]
+            terminal = i == env.steps_taken
+            dt = i - i_prev
+
+            t = Transition(s_prev, a, s, r, terminal, dt)
+            if len(self) < self.capacity:
+                self.buffer.append(t)
+            else:
+                self.buffer[self.pos] = t
+                self.pos = (self.pos + 1) % self.capacity
+
+    def sample(self, n: int) -> Tuple:
         """
         Args:
-            batch_size: Number of transitions to randomly sample and batch
-                        together.
+            n: Number of experiences to sample (uniformly, with replacement).
 
         Returns:
             A five-tuple (`s_prev`, `a`, `s`, `dr`, `terminal`), where `s`
@@ -67,17 +93,14 @@ class NStepReplayMemory(object):
             final/initial states, and `terminal` is whether `s` is a terminal
             state.
         """
-        device = self.device
-        s_prev, a, s, dr, terminal = list(
-            zip(*random.sample(self._memory, batch_size)))
+        s_prev, a, s, dr, terminal, dt = \
+            list(zip(*random.choices(self.buffer, k=n)))
 
-        a = torch.stack(a)
-        dr = torch.tensor(dr, device=device, dtype=torch.float32)
-        terminal = torch.tensor(terminal, device=device, dtype=torch.bool)
         s_prev = torch.stack(s_prev)
+        a = torch.stack(a)
         s = torch.stack(s)
+        dr = torch.tensor(dr, device=self.device, dtype=torch.float32)
+        terminal = torch.tensor(terminal, device=self.device, dtype=torch.bool)
+        dt = torch.tensor(dt, device=self.device, dtype=torch.float32)
 
-        return s_prev, a, s, dr, terminal
-
-    def __len__(self):
-        return len(self._memory)
+        return s_prev, a, s, dr, terminal, dt
