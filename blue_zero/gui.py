@@ -4,7 +4,7 @@ import numpy as np
 import contextlib
 with contextlib.redirect_stdout(None):
     import pygame
-from pygame_widgets import ButtonArray
+from pygame_widgets.button import ButtonArray
 from torch import Tensor
 
 import blue_zero.config as cfg
@@ -89,7 +89,7 @@ class BlueGUI(object):
             if r.collidepoint(pos):
                 return ij
 
-    def draw_game_over(self) -> bool:
+    def draw_game_over(self):
         self.screen.blit(self.haze, (0, 0))
         self.buttons.draw()
         pygame.display.flip()

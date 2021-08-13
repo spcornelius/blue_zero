@@ -7,12 +7,12 @@ channels:
 
 dependencies:
   - contextlib2
-  - cudatoolkit =11.0
+  - cudatoolkit =11.0 # [linux]
   - cython
   - ipython
   - matplotlib
   - more-itertools
-  - numpy
+  - numpy >=1.20.0
   - pip
   - python >=3.8
   - pytorch >=1.7
@@ -22,6 +22,6 @@ dependencies:
       - gym
       - ipdb
       - pygame >=2.0.0
-      - pygame_widgets
+      - pygame_widgets ==0.6.1
       - simple-parsing
       - wurlitzer

@@ -4,7 +4,6 @@ from pathlib import Path
 from blue_zero.config import Status
 from blue_zero.mode import BlueMode, mode_registry
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--num-boards', type=int, required=True,
                     help="number of boards to generate")
@@ -62,10 +61,12 @@ def main():
     num_boards = args.pop('num_boards')
     boards = gen_random(n, p_min, p_max, mode, num_boards=num_boards,
                         **args)
+
     if out_file.exists():
-        raise FileExistsError(f"Output file {out_file} already exists. "
-                              "Aborting.")
-    # np.save(out_file, boards)
+        ans = input(
+            f"File {out_file} exists. Overwrite? (y/N) ").strip().lower()
+        if ans != "y":
+            return
     np.savez_compressed(out_file, boards)
 
 

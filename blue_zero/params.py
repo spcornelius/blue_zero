@@ -47,17 +47,22 @@ class TrainParams(Serializable):
     # name of optimizer to use and optional kwargs
     optimizer: dict
 
-    # whether to use gradient value clipping
-    clip_gradients: bool = True
-
     # method used to update target qnet from policy qnet
     target_update_mode: str = choice('hard', 'soft')
 
-    # how often to record network snapshots / losses
-    snapshot_freq: int = 0
-
     # exploration strategy
     exploration: str = choice('eps_greedy', 'softmax')
+
+    # whether to use gradient value clipping
+    clip_gradients: bool = True
+
+    # save a network snapshot every epoch between 0 and this epoch
+    # (left inclusive)
+    snapshot_all_before: int = 1000
+
+    # how many additional network snapshots to save (logarithmically spaced
+    # between 'snapshot_all_before' and  and max_epochs)
+    num_addl_snapshots: int = 1000
 
     # if false, don't anneal exploration parameter from start to final
     # value

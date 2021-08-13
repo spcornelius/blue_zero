@@ -1,11 +1,11 @@
-from typing import Union, Iterable
-
-import numpy as np
-import torch
 import abc
-from torch.nn.functional import softmax
+import numpy as np
+import sys
+import torch
 from more_itertools import chunked
+from torch.nn.functional import softmax
 from tqdm import tqdm
+from typing import Union, Iterable
 
 from blue_zero.mode import BlueMode
 from blue_zero.qnet import QNet
@@ -64,12 +64,11 @@ class QAgent(Agent):
         if batch_size is None:
             batch_size = len(envs)
 
-        disable = pbar is False
         if pbar is True:
             pbar = tqdm(total=len(envs), desc="Playing")
 
-        pbar.disable = disable
-        pbar.update(sum(e.done for e in envs))
+        if pbar:
+            pbar.update(sum(e.done for e in envs))
 
         for env_batch in chunked(envs, batch_size):
             while unfinished_envs := [e for e in env_batch if not e.done]:
@@ -80,8 +79,9 @@ class QAgent(Agent):
                 actions = self.get_action(batch).cpu().numpy()
                 for env, a in zip(unfinished_envs, actions):
                     _, _, done, _ = env.step(a)
-                    pbar.update(done)
-                    pbar.refresh()
+                    if pbar:
+                        pbar.update(done)
+                        pbar.refresh()
 
 
 class EpsGreedyQAgent(QAgent):
