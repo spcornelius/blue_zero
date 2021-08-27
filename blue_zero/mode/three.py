@@ -46,6 +46,8 @@ class BlueMode3(BlueMode, id=3):
         spanning_clusters = self._get_spanning_clusters(labels)
 
         idx = np.isin(labels, list(spanning_clusters))
+
+        s[:, not_blocked] = False
         s[Status.dead, ~idx & not_blocked] = True
         s[Status.alive, idx & not_blocked] = True
         self._game_over = not spanning_clusters

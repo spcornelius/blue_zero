@@ -61,6 +61,7 @@ class BlueMode(Env):
         self._state_orig = self.state.copy()
         self._game_over = False
 
+        assert np.all(self.state.sum(axis=0) == 1)
         self.update()
 
     # noinspection PyMethodOverriding
@@ -129,6 +130,7 @@ class BlueMode(Env):
 
         # recompute clusters and check termination
         self.update()
+        assert np.all(self.state.sum(axis=0) == 1)
 
         # add adjust reward up for the fraction of green squares cleared
         if self.shape_rewards:
