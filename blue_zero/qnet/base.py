@@ -47,12 +47,19 @@ class QNet(Module, metaclass=abc.ABCMeta):
         _registry[id] = cls
 
     def save(self, file: Union[str, Path]):
-        qnet_params = asdict(self)
-        qnet_params['id'] = self._id
-        state = dict(state_dict={k: v.cpu() for k, v in
-                                 self.state_dict().items()},
-                     qnet_params=qnet_params)
-        torch.save(state, file)
+        qnet_args = asdict(self)
+        qnet_args['id'] = self._id
+        data = dict(state_dict={k: v.cpu() for k, v in
+                                self.state_dict().items()},
+                    qnet_args=qnet_args)
+        torch.save(data, file)
+
+    @staticmethod
+    def load(file: Union[str, Path]):
+        data = torch.load(file)
+        net = QNet.create(**data['qnet_args'])
+        net.load_state_dict(data['state_dict'])
+        return net
 
     @abc.abstractmethod
     def q(self, s: torch.Tensor) -> torch.Tensor:

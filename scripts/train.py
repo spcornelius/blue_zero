@@ -74,26 +74,18 @@ def main(config_file: Path, train_file: Path, validation_file: Path,
     if hot_start is None:
         util.init_weights(net)
     else:
-        with gzip.open(hot_start, "rb") as f:
-            data = pkl.load(f)
-        net.load_state_dict(data["final_state"])
-        if params.training.anneal:
-            warn(
-                "Hot start provided. Disabling exploration annealing "
-                "(training.anneal=False).")
-        params.training.anneal = False
+        QNet.load(hot_start)
+        # if params.training.anneal:
+        #     warn(
+        #         "Hot start provided. Disabling exploration annealing "
+        #         ":q!(training.anneal=False).")
+        # params.training.anneal = False
 
     memory = NStepReplayMemory(**params.replay, device=device)
     trainer = Trainer(net, train_set, validation_set, memory,
                       params.training, device=device)
-    final_state, snapshots = trainer.train()
-
-    data = dict(final_state, snapshots=snapshots)
-    data['final_state'] = final_state
-    data['snapshots'] = snapshots
-    data['qnet_params'] = params.qnet
-    with gzip.open(output_file, "wb") as f:
-        pkl.dump(data, f)
+    net = trainer.train()
+    net.save(output_file)
 
 
 if __name__ == "__main__":

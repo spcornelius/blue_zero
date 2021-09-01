@@ -30,14 +30,11 @@ class Options:
     file: Path = field(alias='-f', required=False)
 
 
-def main( n: int, p: float, mode: int, file: Path = None,
-        **kwargs):
+def main(n: int, p: float, mode: int, file: Path = None,
+         **kwargs):
     machine_mode = file is not None
     if machine_mode:
-        with gzip.open(file, "rb") as f:
-            data = pkl.load(f)
-        net = QNet.create(**data['qnet_params'])
-        net.load_state_dict(data['final_state'])
+        net = QNet.load(file)
         agent = QAgent(net)
 
     gui = BlueGUI((n, n))

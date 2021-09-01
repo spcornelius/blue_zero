@@ -178,7 +178,7 @@ class Trainer(object):
 
             self.epoch += 1
 
-        return deepcopy(self.policy_net.state_dict()), self.snapshots
+        return self.policy_net
 
     def update_target_if_required(self):
         if self.p.target_update_mode == 'soft':
