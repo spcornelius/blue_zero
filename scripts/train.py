@@ -1,10 +1,7 @@
 from dataclasses import dataclass, asdict
-from warnings import warn
 from pathlib import Path
 
 import numpy as np
-import pickle as pkl
-import gzip
 import torch
 from simple_parsing import ArgumentParser, field
 
@@ -12,8 +9,8 @@ import blue_zero.util as util
 from blue_zero.mode import BlueMode
 from blue_zero.params import HyperParams
 from blue_zero.qnet.base import QNet
-from blue_zero.trainer import Trainer
 from blue_zero.replay import NStepReplayMemory
+from blue_zero.trainer import Trainer
 
 torch.backends.cudnn.benchmark = True
 

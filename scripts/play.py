@@ -1,5 +1,3 @@
-import gzip
-import pickle as pkl
 import sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
