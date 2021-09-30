@@ -10,6 +10,7 @@ dependencies:
   - cudatoolkit =11.0 # [linux]
   - cython
   - ipython
+  - scipy
   - matplotlib
   - more-itertools
   - numpy >=1.20.0
@@ -25,3 +26,4 @@ dependencies:
       - pygame_widgets ==0.6.1
       - simple-parsing
       - wurlitzer
+      - more_itertools
