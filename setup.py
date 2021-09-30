@@ -28,6 +28,8 @@ clusters_ext = Extension("blue_zero.clusters.clusters",
                          )
 clusters_ext.cython_directives = {'language_level': "3"}
 
+clusters_ext.cython_directives = {'language_level': "3"}
+
 if __name__ == '__main__':
     setup(
         name=pkg_name.lower(),
