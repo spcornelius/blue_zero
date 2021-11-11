@@ -1,16 +1,16 @@
 from itertools import product as iterproduct
 
 import matplotlib.pyplot as plt
-from matplotlib import colors
+import numpy as np
 import pandas as pd
 import seaborn as sb
-import numpy as np
+from matplotlib import colors
 
+from blue_zero import config as cfg
+from blue_zero.agent import QAgent
 from blue_zero.mode import mode_registry
 from blue_zero.mode.base import BlueMode
 from blue_zero.qnet import QNet
-from blue_zero.agent import QAgent
-from blue_zero import config as cfg
 
 blue_colors = [
     cfg.black,
@@ -61,23 +61,20 @@ def plot_modes():
     [a.set_yticks([]) for a in ax]
 
 
-def play_and_get_move_count(
-    trained_mode=0, game_mode=0, n=15, p=0.8, games=1000, models_root="/app/"
-):
-    trained_file = models_root + f"/mode{trained_mode}/{n}/trained_model.pt"
-    net = QNet.load(trained_file)
-    agent = QAgent(net)
-    envs = [mode_registry[game_mode].from_random((n, n), p) for _ in range(games)]
-    agent.play(envs)
-    return [e.steps_taken for e in envs]
+def get_played_envs(trained_mode, game_mode, n, p, n_games, models_root):
+    net = get_net(trained_mode=trained_mode, n=n, models_root=models_root)
+    envs = [get_env(game_mode, n, p) for _ in range(n_games)]
+    QAgent(net).play(envs)
+    return envs
 
 
 def get_steps_df(n=15, p=0.8, games=1000, models_root="/app/"):
     results = {}
     for trained_mode, game_mode in iterproduct((0, 3), (0, 3)):
-        steps = play_and_get_move_count(
-            trained_mode, game_mode, n=n, p=p, games=games, models_root=models_root
+        envs = get_played_envs(
+            trained_mode, game_mode, n=n, p=p, n_games=games, models_root=models_root
         )
+        steps = [e.steps_taken for e in envs]
         results[(trained_mode, game_mode)] = steps
     steps_df = pd.DataFrame(results)
     steps_df.columns.names = ["trained_on", "played_on"]
