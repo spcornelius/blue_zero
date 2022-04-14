@@ -1,7 +1,8 @@
-import helpers
-import seaborn as sb
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sb
+
+import helpers
 
 sb.set("paper")
 sb.set_palette("Set2")
@@ -15,9 +16,9 @@ if __name__ == "__main__":
     df = pd.concat(map(pd.DataFrame, game_lengths))
     df = df[df.n == n]
     for p in pvec:
-        helpers.do_on_task_plot(df[df.p == p])
+        helpers.plot_on_task(df[df.p == p])
         plt.savefig(f"on_task_n{n}_p{p}.png")
-        helpers.do_off_task_plot(df[df.p == p])
+        helpers.plot_off_task(df[df.p == p])
         plt.savefig(f"off_task_n{n}_p{p}.png")
     df.train = df.train.map(helpers.pretty_names)
     df.play = df.play.map(helpers.pretty_names)

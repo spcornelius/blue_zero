@@ -1,6 +1,7 @@
-import helpers
 import matplotlib.pyplot as plt
 
+import helpers
+
 if __name__ == "__main__":
-    helpers.plot_modes()
+    helpers.plot_q_modes()
     plt.savefig("q_heatmap.png")
