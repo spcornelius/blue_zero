@@ -83,8 +83,6 @@ def load_game_lengths(output_root):
     return runs
 
 
-
-
 def get_steps_df(n=15, p=0.8, games=1000, models_root="/app/"):
     results = {}
     for trained_mode, game_mode in iterproduct((0, 3), (0, 3)):

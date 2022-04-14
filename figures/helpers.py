@@ -1,4 +1,3 @@
-
 import matplotlib.cm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -79,7 +78,7 @@ def plot_k_panel_game(env, net, k, shared_colormap) -> Figure:
     states = env.states + [env.state]
     boards = [x.T @ [1, 2, 3, 4] for x in states]
     qs = [play.get_q(net, state) for state in states]
-    
+
     rows = 2 * (k + 1) // 3
     f, ax = plt.subplots(
         rows, 3, figsize=(6, rows * 3), subplot_kw=dict(xticks=[], yticks=[])
@@ -94,10 +93,12 @@ def plot_k_panel_game(env, net, k, shared_colormap) -> Figure:
         _plot_q_values_individual_colormaps(qs, f, bottom_rows_ax)
     return f
 
+
 def _plot_q_values_individual_colormaps(qs, f, ax_set):
     for q, subax in zip(qs, ax_set):
         im = subax.imshow(q.T, cmap=q_cm)
         f.colorbar(im, ax=subax, location="bottom", label="$-Q$")
+
 
 def _plot_q_values_shared_colormap(qs, f, ax_set):
     qmin = min([q.min() for q in qs])
@@ -105,6 +106,7 @@ def _plot_q_values_shared_colormap(qs, f, ax_set):
     for q, subax in zip(qs, ax_set):
         im = subax.imshow(q.T, cmap=q_cm, vmin=qmin, vmax=qmax)
     f.colorbar(im, ax=ax_set, location="bottom", label="$-Q$")
+
 
 def _plot_boards(boards, ax_set):
     for board, subax in zip(boards, ax_set):

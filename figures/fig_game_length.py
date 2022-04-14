@@ -22,7 +22,7 @@ if __name__ == "__main__":
         plt.savefig(f"off_task_n{n}_p{p}.png")
     df.train = df.train.map(helpers.pretty_names)
     df.play = df.play.map(helpers.pretty_names)
-    df = df.rename(columns={"train":"agent"})
+    df = df.rename(columns={"train": "agent"})
     for mode in df.play.unique():
         plt.figure(figsize=(5, 3))
         sb.lineplot(

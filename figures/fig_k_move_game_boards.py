@@ -11,7 +11,6 @@ if __name__ == "__main__":
     models_root = "/app/"
     game_len = 2
     shared_colormap = True
-    
 
     envs = helpers.get_played_envs(
         trained_mode=mode,

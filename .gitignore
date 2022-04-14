@@ -17,3 +17,5 @@ data/
 *.so
 .envrc
 environment.yml
+game_lengths/
+gameplay_figs/
