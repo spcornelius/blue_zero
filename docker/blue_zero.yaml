@@ -1,0 +1,14 @@
+services:
+  blue_zero:
+    # assuming you build using dev.dockerfile and save the image
+    image: mmdanziger/blue_zero:dev
+    ports:
+      - "8888:8888"
+    volumes:
+      - "$HOME/devsnaps/blue_zero/figures:/app/figures"
+      - "$HOME/devsnaps/blue_zero/scripts:/app/scripts"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu] 

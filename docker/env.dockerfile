@@ -1,4 +1,10 @@
+# Dockerfile for mmdanziger/blue_zero
+# This container has the environment for blue_zero but no code.
+# To get a version with code either run with the GH_TOKEN flag
+# and a valid GH_TOKEN in your env, or use it as a base image
+# as shown in dev.dockerfile
 FROM nvidia/cuda:11.0-base-ubuntu20.04
+LABEL org.opencontainers.image.authors="mmdanziger@gmail.com"
 
 # Install some basic utilities
 RUN apt-get update && apt-get install -y \
