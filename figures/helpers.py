@@ -2,9 +2,10 @@ import matplotlib.cm
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
-from blue_zero import config as cfg
 from matplotlib import colors
 from matplotlib.figure import Figure
+
+from blue_zero import config as cfg
 
 blue_colors = [
     cfg.black,

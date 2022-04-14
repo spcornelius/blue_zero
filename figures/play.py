@@ -3,6 +3,7 @@ from itertools import product as iterproduct
 from pathlib import Path
 
 import pandas as pd
+
 from blue_zero.agent import EpsGreedyQAgent, QAgent
 from blue_zero.mode import mode_registry
 from blue_zero.mode.base import BlueMode
