@@ -6,6 +6,8 @@ from matplotlib import colors
 from matplotlib.figure import Figure
 
 from blue_zero import config as cfg
+import play
+
 
 blue_colors = [
     cfg.black,
@@ -13,16 +15,13 @@ blue_colors = [
     cfg.blue,
     cfg.orange,
 ]
-pretty_names = {-1: "random", 0: "network", 3: "flow"}
+pretty_names = {-1: "random", 0: "network", 3: "flow", 4: "noodle"}
 blue_colors = np.array(blue_colors) / 255
 game_cm = colors.ListedColormap(blue_colors)
 norm = colors.BoundaryNorm(boundaries=[1, 2, 3, 4, 5], ncolors=game_cm.N)
 
 q_cm = matplotlib.cm.get_cmap("plasma_r").copy()
 q_cm.set_bad(color="black")
-
-
-import play
 
 
 def plot_q_modes():
@@ -61,7 +60,7 @@ def plot_steps_to_completion(train_mode, play_mode, steps_df, label=""):
 
 
 def plot_on_task(steps_df):
-    plt.figure(figsize=(5, 3))
+    plt.figure(figsize=(6, 4))
     label = lambda a: f"{pretty_names[a]}"
     plot_steps_to_completion(0, 0, steps_df, label=label(0))
     plot_steps_to_completion(3, 3, steps_df, label=label(3))
@@ -69,20 +68,20 @@ def plot_on_task(steps_df):
 
 def plot_off_task(steps_df):
     label = lambda a, b: f"off task: {pretty_names[a]} on {pretty_names[b]}"
-    plt.figure(figsize=(5, 3))
+    plt.figure(figsize=(6, 4))
     plot_steps_to_completion(0, 3, steps_df, label=label(0, 3))
     plot_steps_to_completion(3, 0, steps_df, label=label(3, 0))
 
 
-def plot_k_panel_game(env, net, k, shared_colormap) -> Figure:
+def plot_k_panel_game(env, net, k, shared_colormap, cols=3) -> Figure:
     assert len(env.states) == k
     states = env.states + [env.state]
     boards = [x.T @ [1, 2, 3, 4] for x in states]
     qs = [play.get_q(net, state) for state in states]
 
-    rows = 2 * (k + 1) // 3
+    rows = 2 * (k + 1) // cols
     f, ax = plt.subplots(
-        rows, 3, figsize=(6, rows * 3), subplot_kw=dict(xticks=[], yticks=[])
+        rows, cols, figsize=(cols * 2, rows * 3), subplot_kw=dict(xticks=[], yticks=[])
     )
     top_rows_ax = ax[: (rows // 2), :].flatten().squeeze()
     bottom_rows_ax = ax[(rows // 2) :, :].flatten().squeeze()
