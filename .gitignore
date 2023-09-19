@@ -17,3 +17,9 @@ data/
 *.so
 .envrc
 environment.yml
+game_lengths/
+gameplay_figs/
+*.png
+trained_models/
+.vscode
+Untitled*.ipynb
