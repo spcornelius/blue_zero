@@ -78,10 +78,11 @@ def plot_k_panel_game(env, net, k, shared_colormap, cols=3) -> Figure:
     states = env.states + [env.state]
     boards = [x.T @ [1, 2, 3, 4] for x in states]
     qs = [play.get_q(net, state) for state in states]
-
+    subplot_scale = 2
     rows = 2 * (k + 1) // cols
+    figsize = (cols * subplot_scale, rows * subplot_scale)
     f, ax = plt.subplots(
-        rows, cols, figsize=(cols * 2, rows * 3), subplot_kw=dict(xticks=[], yticks=[])
+        rows, cols, figsize=figsize, subplot_kw=dict(xticks=[], yticks=[])
     )
     top_rows_ax = ax[: (rows // 2), :].flatten().squeeze()
     bottom_rows_ax = ax[(rows // 2) :, :].flatten().squeeze()
